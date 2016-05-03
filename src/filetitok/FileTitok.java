@@ -5,31 +5,41 @@
 package filetitok;
 
 import filetitok.gui.Window;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.plaf.nimbus.NimbusLookAndFeel;
+import javax.swing.*;
+import javax.swing.UIManager.LookAndFeelInfo;
 
 public class FileTitok {
 
-    private static final String PROGRAM_INFO = "FileTitok";
-
     public static void main(String[] args) {
-        setLnF();
+
+        /* szoveg elsimitas bekapcsolasa */
+        System.setProperty("awt.useSystemAAFontSettings", "on");
+        System.setProperty("swing.aatext", "true");
+        /* ----- */
+
+        setLaF();
+
         SwingUtilities.invokeLater(new Window()::createAndShowGUI);
     }
 
-    public static void setLnF() {
+    // look and feel (kinézet) beállítása
+    private static void setLaF() {
+        boolean set = false;
         try {
-            UIManager.setLookAndFeel(new NimbusLookAndFeel());
-        } catch (Exception e) {
-            System.err.println("Nimbus L&F nem találhato!");
-            throw new RuntimeException("Look and Feel nem talalhato");
+            for (LookAndFeelInfo i : UIManager.getInstalledLookAndFeels()) {
+                if (i.getName().equals("Nimbus")) {
+                    UIManager.setLookAndFeel(i.getClassName());
+                    set = true;
+                    break;
+                }
+            }
+
+            if (!set) {
+                throw new RuntimeException("nimbus LaF nem talalhato");
+            }
+        } catch (Exception ex) {
+            // silence is golden
         }
 
     }
-
-    public static String getProgramInfo() {
-        return PROGRAM_INFO;
-    }
-
 }

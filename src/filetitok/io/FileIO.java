@@ -1,6 +1,7 @@
 package filetitok.io;
 
 import filetitok.crypto.Cryptography;
+import filetitok.gui.Constants;
 import filetitok.gui.Window;
 import filetitok.misc.Util;
 import java.io.ByteArrayOutputStream;
@@ -30,7 +31,7 @@ public class FileIO {
     // segitse, amely fajl-, es konyvtarneveket tarol az objektumban, hogy ezek
     // bekereset meg lehessen valositani tobb lepesben, anelkul hogy az elozo
     // ertek elveszne. hasznalatanal figyelni kell arra, hogy minden titkositott
-    // fajl utan ki kell uritnenunk ertelem szeruen.
+    // fajl utan ki kell uritnenunk ertelem szeruen -> clearBuffers() metodus
     public static final HashMap<String, File> FILE_BUFFER = new HashMap<>();
 
     public FileIO() throws NoSuchAlgorithmException, NoSuchPaddingException {
@@ -42,10 +43,11 @@ public class FileIO {
     public boolean isFileOk(File file, boolean writeAccess) {
         return (writeAccess ? file.exists() && file.canRead() && file.canWrite() : file.exists() && file.canRead());
     }
-
+    
+    // a file bufferben levo fajl bajtjait titkositja, es byte bufferbe irja
     public void encryptBufferedFile(char[] key, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         // kiemeljuk a titkositando fajl mutatojat
-        final File encSrcFile = FileIO.FILE_BUFFER.get("e_src_file");
+        final File encSrcFile = FileIO.FILE_BUFFER.get(Constants.E_SRC_FILE);
 
         /* ellenorzesek, beolvasas es titkositas elvegzese */
         byte[] fileBytes;
@@ -58,18 +60,14 @@ public class FileIO {
             BYTE_BUFFER.write(encryptedBytes);
             /* ----- */
         } else {
-            w.message(null, "Úgy tűnik, hogy  a kiválasztott fájl valami miatt nem elérhető."
-                    + System.lineSeparator()
-                    + "Ellenőrizze, hogy a programnak van-e jogosultsága azt olvasni, "
-                    + System.lineSeparator()
-                    + "majd válassza ki újra", JOptionPane.WARNING_MESSAGE);
+            w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
         }
 
     }
-
+    // a file bufferben levo fajl bajtjait visszafejti, es byte bufferbe irja
     public void decryptBufferedFile(char[] key, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         // kiemeljuk a visszafejtendo fajl mutatojat
-        final File decSrcFile = FileIO.FILE_BUFFER.get("d_src_file");
+        final File decSrcFile = FileIO.FILE_BUFFER.get(Constants.D_SRC_FILE);
 
         /* ellenorzesek, beolvasas es visszafejtes elvegzese */
         byte[] fileBytes;
@@ -86,11 +84,7 @@ public class FileIO {
             BYTE_BUFFER.write(decryptedBytes);
             /* ----- */
         } else {
-            w.message(null, "Úgy tűnik, hogy  a kiválasztott fájl valami miatt nem elérhető."
-                    + System.lineSeparator()
-                    + "Ellenőrizze, hogy a programnak van-e jogosultsága azt olvasni, "
-                    + System.lineSeparator()
-                    + "majd válassza ki újra", JOptionPane.WARNING_MESSAGE);
+            w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
         }
 
     }
@@ -98,47 +92,44 @@ public class FileIO {
     // ez a metodus vegzi el a titkositott bajtok kiirasat a byte bufferbol
     public void encDoFinal(Window w) throws IOException {
         // mutatok kiemelese
-        final File encSrcFile = FileIO.FILE_BUFFER.get("e_src_file");
-        final File encSaveDir = FileIO.FILE_BUFFER.get("e_dir");
+        final File encSrcFile = FileIO.FILE_BUFFER.get(Constants.E_SRC_FILE);
+        final File encSaveDir = FileIO.FILE_BUFFER.get(Constants.E_DIR);
         // fajlellenorzes
         if (!isFileOk(encSaveDir, true)) {
-            w.message(null, "Úgy tűnik, hogy  a kiválasztott könyvtár valami miatt nem elérhető."
-                    + System.lineSeparator()
-                    + "Ellenőrizze, hogy a programnak van-e jogosultsága azt olvasni, "
-                    + System.lineSeparator()
-                    + "majd válassza ki újra", JOptionPane.WARNING_MESSAGE);
+            w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
             return;
         }
         // kiiras es takaritas
         Files.write(Paths.get(encSaveDir.toPath().toString(), encSrcFile.getName()), BYTE_BUFFER.toByteArray(), StandardOpenOption.CREATE);
-        BYTE_BUFFER.reset();
-        FILE_BUFFER.clear();
+        clearBuffers();
     }
 
     // visszafejtett bajtok kiirasa a fajlba
     public void decDoFinal(Window w) throws IOException {
         // mutatok kiemelese
-        final File decSrcFile = FileIO.FILE_BUFFER.get("d_src_file");
-        final File decSaveDir = FileIO.FILE_BUFFER.get("d_dir");
+        final File decSrcFile = FileIO.FILE_BUFFER.get(Constants.D_SRC_FILE);
+        final File decSaveDir = FileIO.FILE_BUFFER.get(Constants.D_DIR);
         // fajlellenorzes
         if (!isFileOk(decSaveDir, true)) {
-            w.message(null, "Úgy tűnik, hogy  a kiválasztott könyvtár valami miatt nem elérhető."
-                    + System.lineSeparator()
-                    + "Ellenőrizze, hogy a programnak van-e jogosultsága azt olvasni, "
-                    + System.lineSeparator()
-                    + "majd válassza ki újra", JOptionPane.WARNING_MESSAGE);
+            w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
             return;
         }
         //kiiras es takaritas
         Files.write(Paths.get(decSaveDir.toPath().toString(), decSrcFile.getName()), BYTE_BUFFER.toByteArray(), StandardOpenOption.CREATE);
-        BYTE_BUFFER.reset();
-        FILE_BUFFER.clear();
+        clearBuffers();
     }
-    
+
     // ez a metodus azt ellenorzi, hogy ha file1-et elmentjuk, az nem fogja-e
     // felulirni file2-t
     public boolean willOveride(File file1, File file2) {
         return file1.toPath().equals(file2.getParentFile().toPath());
+    }
+
+    
+    // bufferek takaritasa
+    private void clearBuffers() {
+        BYTE_BUFFER.reset();
+        FILE_BUFFER.clear();
     }
 
 }

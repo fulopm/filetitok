@@ -7,6 +7,7 @@ package filetitok.gui;
 import filetitok.FileTitok;
 import filetitok.io.FileIO;
 import filetitok.misc.Util;
+import java.util.List;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -59,12 +60,11 @@ public class Window implements ActionListener {
     private final JLabel placeholder2 = new JLabel("");
 
     // betutipus konstansok
-    private final Font standardFont = new Font("Tahoma", Font.PLAIN, 11);
-    private final Font footerFont = new Font("Tahoma", Font.PLAIN, 9);
+    private final Font standardFont = new Font(Constants.UI_FONT_NAME, Font.PLAIN, 11);
+    private final Font footerFont = new Font(Constants.UI_FONT_NAME, Font.PLAIN, 9);
 
     private final String BREAK = System.lineSeparator();
     private final int ERROR = JOptionPane.ERROR_MESSAGE;
-    private final String CONST_SELECT = "Kiválasztás...";
     private int tries = 0;
 
     // osszes objektum inicializalasa, GUI felepitese, es lathatova tetele
@@ -76,7 +76,7 @@ public class Window implements ActionListener {
 
         contentPane.setLayout(new GridBagLayout());
 
-        contentPane.setBorder(BorderFactory.createTitledBorder(new TitledBorder(""), "Fülöp Márk, 10.D", TitledBorder.TRAILING, TitledBorder.BOTTOM, footerFont, Color.black));
+        contentPane.setBorder(BorderFactory.createTitledBorder(new TitledBorder(""), Constants.AUTHOR, TitledBorder.TRAILING, TitledBorder.BOTTOM, footerFont, Color.black));
 
         /* ----- */
 
@@ -89,24 +89,24 @@ public class Window implements ActionListener {
         /* ----- */
 
  /* titkositas panel elemeinek inicializalasa es beallitasa */
-        eSrcFileLbl = new JLabel("Titkosítandó fájl: ");
+        eSrcFileLbl = new JLabel(Constants.UI_TO_ENC);
         eSrcFileLbl.setFont(standardFont);
 
-        eSrcFileBtn = new JButton(CONST_SELECT);
+        eSrcFileBtn = new JButton(Constants.UI_SELECT);
         eSrcFileBtn.setBorder(new LineBorder(null, 0, false));
         eSrcFileBtn.addActionListener(this);
 
-        eDestDirLbl = new JLabel("Mentés helye: ");
+        eDestDirLbl = new JLabel(Constants.UI_SAVE_DIR);
         eDestDirLbl.setFont(standardFont);
 
-        eDestDirBtn = new JButton(CONST_SELECT);
+        eDestDirBtn = new JButton(Constants.UI_SELECT);
         eDestDirBtn.setBorder(new LineBorder(null, 0, false));
         eDestDirBtn.addActionListener(this);
-        eOkBtn = new JButton("Titkosítás");
+        eOkBtn = new JButton(Constants.UI_ENCRYPTION);
         eOkBtn.addActionListener(this);
         eDestDirBtn.setBorder(new LineBorder(null, 0, false));
 
-        eKeyLbl = new JLabel("Kulcs: ");
+        eKeyLbl = new JLabel(Constants.UI_KEY);
         eKeyLbl.setFont(standardFont);
 
         eKeyInp = new JPasswordField();
@@ -116,7 +116,7 @@ public class Window implements ActionListener {
  /* titkositas panel inicializalasa, beallitasa */
         encryptionPanel = new JPanel();
         encryptionPanel.setOpaque(true);
-        encryptionPanel.setBorder(BorderFactory.createTitledBorder("Titkosítás"));
+        encryptionPanel.setBorder(BorderFactory.createTitledBorder(Constants.UI_ENCRYPTION));
         encryptionPanel.setLayout(new GridLayout(4, 2, 2, 2));
         /* ----- */
 
@@ -135,25 +135,25 @@ public class Window implements ActionListener {
         contentPane.add(encryptionPanel, c);
 
         /* visszafejtes panel elemeinek inicializalasa */
-        dSrcFileLbl = new JLabel("Visszafejtendő fájl: ");
+        dSrcFileLbl = new JLabel(Constants.UI_TO_DEC);
         dSrcFileLbl.setFont(standardFont);
 
-        dSrcFileBtn = new JButton(CONST_SELECT);
+        dSrcFileBtn = new JButton(Constants.UI_SELECT);
         dSrcFileBtn.setBorder(new LineBorder(null, 0, false));
         dSrcFileBtn.addActionListener(this);
 
-        dSaveDirLbl = new JLabel("Mentés helye: ");
+        dSaveDirLbl = new JLabel(Constants.UI_SAVE_DIR);
         dSaveDirLbl.setFont(standardFont);
 
-        dSaveDirBtn = new JButton(CONST_SELECT);
+        dSaveDirBtn = new JButton(Constants.UI_SELECT);
         dSaveDirBtn.setBorder(new LineBorder(null, 0, false));
         dSaveDirBtn.addActionListener(this);
 
-        dKeyLbl = new JLabel("Kulcs: ");
+        dKeyLbl = new JLabel(Constants.UI_KEY);
         dKeyLbl.setFont(standardFont);
         dKeyInp = new JPasswordField();
 
-        dOkBtn = new JButton("Visszafejtés");
+        dOkBtn = new JButton(Constants.UI_DECRYPTION);
         dOkBtn.addActionListener(this);
         dOkBtn.setBorder(new LineBorder(null, 0, false));
         /* ----- */
@@ -161,7 +161,7 @@ public class Window implements ActionListener {
  /* visszafejtes panel elemeinek hozzadasa a panelhez */
         decryptionPanel = new JPanel();
         decryptionPanel.setOpaque(true);
-        decryptionPanel.setBorder(BorderFactory.createTitledBorder("Visszafejtés"));
+        decryptionPanel.setBorder(BorderFactory.createTitledBorder(Constants.UI_DECRYPTION));
         decryptionPanel.setLayout(new GridLayout(4, 2, 2, 2));
 
         decryptionPanel.add(dSrcFileLbl);
@@ -181,12 +181,12 @@ public class Window implements ActionListener {
         frame = new JFrame();
         frame.setAutoRequestFocus(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setTitle(FileTitok.getProgramInfo());
+        frame.setTitle(Constants.PROGRAM);
+        frame.setIconImages(loadIcons());
         frame.setContentPane(contentPane);
         frame.pack();
         frame.setResizable(false);
         frame.setLocationRelativeTo(null);
-        frame.setIconImages(loadIcons());
         frame.setVisible(true);
         /* ----- */
     }
@@ -201,11 +201,11 @@ public class Window implements ActionListener {
         /* TITKOSITASI MUVELETEK KEZELESE */
         // titkositando fajl gomb
         if (source == eSrcFileBtn) {
-            eSrcFileBtn.setText(registerFile("e_src_file", false));
+            eSrcFileBtn.setText(registerFile(Constants.E_SRC_FILE, false));
 
             // titikositando fajl mentesenek helye gomb
         } else if (source == eDestDirBtn) {
-            eDestDirBtn.setText(registerFile("e_dir", true));
+            eDestDirBtn.setText(registerFile(Constants.E_DIR, true));
             // titkositas OK gomb
         } else if (source == eOkBtn) {
             message(null, "Nagyon fontos, hogy a megadott kulcs hiányában a későbbiekben" + BREAK
@@ -216,9 +216,9 @@ public class Window implements ActionListener {
 
  /* VISSZAFEJTESI MUVELETEK KEZELESE */
         } else if (source == dSrcFileBtn) {
-            dSrcFileBtn.setText(registerFile("d_src_file", false));
+            dSrcFileBtn.setText(registerFile(Constants.D_SRC_FILE, false));
         } else if (source == dSaveDirBtn) {
-            dSaveDirBtn.setText(registerFile("d_dir", true));
+            dSaveDirBtn.setText(registerFile(Constants.D_DIR, true));
         } else if (source == dOkBtn) {
             // visszafejtes elvegzese
             actionDecrypt(dKeyInp.getPassword());
@@ -230,11 +230,11 @@ public class Window implements ActionListener {
     // grafikus hibauzentet megjelenitese
     public void message(Exception e, String message, int type) {
         if (e == null) {
-            JOptionPane.showMessageDialog(this.frame, message, "Üzenet", type);
+            JOptionPane.showMessageDialog(this.frame, message, Constants.UI_MSG, type);
         } else {
             JOptionPane.showMessageDialog(this.frame,
                     message + " " + e.getMessage(),
-                    "Üzenet", type);
+                    Constants.UI_MSG, type);
         }
 
     }
@@ -248,23 +248,20 @@ public class Window implements ActionListener {
 
         // kulcshosszusag es egyeb parameterek ellenorzese
         if (key.length != 16
-                || !FileIO.FILE_BUFFER.containsKey("e_src_file")
-                || !FileIO.FILE_BUFFER.containsKey("e_dir")) {
-            message(null, "Nincs megadva a titkosítandó fájl, a kulcs, vagy a mentés helye,"
-                    + System.lineSeparator()
-                    + "vagy a kulcs hosszúsága nem 16!", ERROR);
+                || !FileIO.FILE_BUFFER.containsKey(Constants.E_SRC_FILE)
+                || !FileIO.FILE_BUFFER.containsKey(Constants.E_DIR)) {
+            message(null, Constants.UI_MSG_GENERAL_PARAMETER_ERROR, ERROR);
             return;
         }
         try {
             // fajl es konyvtar mutatoinak kiemelese
-            final File encSrcFile = FileIO.FILE_BUFFER.get("e_src_file");
-            final File encSaveDir = FileIO.FILE_BUFFER.get("e_dir");
+            final File encSrcFile = FileIO.FILE_BUFFER.get(Constants.E_SRC_FILE);
+            final File encSaveDir = FileIO.FILE_BUFFER.get(Constants.E_DIR);
             FileIO io = new FileIO();
             // annak ellenorzese, hogy a titkositando fajl felulrija-e majd az
             // eredeti fájlt
             if (io.willOveride(encSaveDir, encSrcFile)) {
-                if (confirm("Felülírni készül az eredeti fájlt, mert a mentés"
-                        + "helye és a forrásfájl helye megegyezik. Folytatja?", "Figyelem")
+                if (confirm(Constants.UI_MSG_OVERIDE, Constants.UI_MSG_WARNING)
                         == JOptionPane.NO_OPTION) {
                     return;
                 }
@@ -273,8 +270,7 @@ public class Window implements ActionListener {
             io.encDoFinal(this);
 
             message(null,
-                    "Sikeres titkosítás!" + BREAK
-                    + "Új fájl: " + encSaveDir.toPath()
+                    Constants.UI_MSG_E_SUCCESS + encSaveDir.toPath()
                     + System.getProperty("file.separator")
                     + encSrcFile.getName(),
                     JOptionPane.INFORMATION_MESSAGE);
@@ -287,48 +283,44 @@ public class Window implements ActionListener {
 
     public void actionDecrypt(char[] key) {
         if (tries == 3) {
-            message(null, "Három próbálkozás elérve, tovább nem próbálkozhat!" + BREAK + "A program kilép.", ERROR);
-            throw new RuntimeException("3 probalkozas elerve");
+            message(null, Constants.UI_MSG_THREE_REACHED, ERROR);
+            this.frame.dispose();
         }
         if (key.length != 16
-                || !FileIO.FILE_BUFFER.containsKey("d_src_file")
-                || !FileIO.FILE_BUFFER.containsKey("d_dir")) {
-            message(null, "Nincs megadva a visszafejtendő fájl, a kulcs, vagy a mentés helye,"
-                    + System.lineSeparator()
-                    + "vagy a kulcs hosszúsága nem 16!", ERROR);
+                || !FileIO.FILE_BUFFER.containsKey(Constants.D_SRC_FILE)
+                || !FileIO.FILE_BUFFER.containsKey(Constants.D_DIR)) {
+            message(null, Constants.UI_MSG_GENERAL_PARAMETER_ERROR, ERROR);
             return;
         }
         try {
-            final File decSrcFile = FileIO.FILE_BUFFER.get("d_src_file");
-            final File decSaveDir = FileIO.FILE_BUFFER.get("d_dir");
+            final File decSrcFile = FileIO.FILE_BUFFER.get(Constants.D_SRC_FILE);
+            final File decSaveDir = FileIO.FILE_BUFFER.get(Constants.D_DIR);
             FileIO io = new FileIO();
 
             io.decryptBufferedFile(key, this);
             io.decDoFinal(this);
             message(null,
-                    "Sikeres visszafejtés!" + BREAK
-                    + "Új fájl: " + decSaveDir.toPath()
+                    Constants.UI_MSG_D_SUCCESS + decSaveDir.toPath()
                     + System.getProperty("file.separator")
                     + decSrcFile.getName(),
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (BadPaddingException e) {
-            message(null, "Hibás kulcsot adott meg!", ERROR);
+            message(null, Constants.UI_MSG_BAD_KEY+(3-tries), ERROR);
             tries++;
         } catch (IOException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException | IllegalBlockSizeException | InvalidKeyException ex) {
             message(ex, "Hiba: " + BREAK, ERROR);
         } finally {
-            reset();
+            //reset();
         }
     }
 
     public void reset() {
-        FileIO.FILE_BUFFER.clear();
         eKeyInp.setText("");
-        eSrcFileBtn.setText(CONST_SELECT);
-        eDestDirBtn.setText(CONST_SELECT);
+        eSrcFileBtn.setText(Constants.UI_SELECT);
+        eDestDirBtn.setText(Constants.UI_SELECT);
         dKeyInp.setText("");
-        dSrcFileBtn.setText(CONST_SELECT);
-        dSaveDirBtn.setText(CONST_SELECT);
+        dSrcFileBtn.setText(Constants.UI_SELECT);
+        dSaveDirBtn.setText(Constants.UI_SELECT);
     }
 
     public String registerFile(String keyToRegister, boolean onlyDir) {
@@ -340,12 +332,11 @@ public class Window implements ActionListener {
         if (chooser.showOpenDialog(this.frame) == JFileChooser.APPROVE_OPTION) {
             File selected = chooser.getSelectedFile();
             FileIO.FILE_BUFFER.put(keyToRegister, selected);
-            System.out.println(selected.getName());
             return Util.trim(selected.getName());
         } else {
             message(null, "Nem választott fájlt!", ERROR);
             reset();
-            return CONST_SELECT;
+            return Constants.UI_SELECT;
         }
 
     }
@@ -353,16 +344,19 @@ public class Window implements ActionListener {
     // ez a metodus azert szukseges, mert minden operacios rendszeren mas-mas
     // meretu ikon kell, hogy legyen hasznalva esztetikai okok miatt, es igy a 
     // java ki tudja valasztani hogy O melyik meretut szeretne hasznalni
-    public ArrayList<Image> loadIcons() {
+    public List<Image> loadIcons() {
+        List<Image> temp = new ArrayList<>();
         try {
-            ArrayList<Image> temp = new ArrayList<>();
-            File resfolder = new File("res");
-            File[] icons = resfolder.listFiles();
-            for (File f : icons) {
+            File resDir = new File("res");
+            if (!resDir.exists()) {
+                throw new RuntimeException("resource konyvtar nem talalhato!");
+            }
+
+            for (File f : resDir.listFiles()) {
                 temp.add(ImageIO.read(f));
             }
             return temp;
-        } catch (Exception e) {
+        } catch (IOException e) {
             return null;
         }
     }
