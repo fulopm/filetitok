@@ -1,7 +1,7 @@
 package filetitok.io;
 
 import filetitok.crypto.Cryptography;
-import filetitok.gui.Constants;
+import filetitok.Constants;
 import filetitok.gui.Window;
 import filetitok.misc.Util;
 import java.io.ByteArrayOutputStream;

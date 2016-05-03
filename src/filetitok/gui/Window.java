@@ -4,6 +4,7 @@
  */
 package filetitok.gui;
 
+import filetitok.Constants;
 import com.sun.glass.events.KeyEvent;
 import filetitok.io.FileIO;
 import filetitok.misc.Util;
