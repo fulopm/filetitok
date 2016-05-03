@@ -43,7 +43,7 @@ public class FileIO {
     public boolean isFileOk(File file, boolean writeAccess) {
         return (writeAccess ? file.exists() && file.canRead() && file.canWrite() : file.exists() && file.canRead());
     }
-    
+
     // a file bufferben levo fajl bajtjait titkositja, es byte bufferbe irja
     public void encryptBufferedFile(char[] key, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         // kiemeljuk a titkositando fajl mutatojat
@@ -64,6 +64,7 @@ public class FileIO {
         }
 
     }
+
     // a file bufferben levo fajl bajtjait visszafejti, es byte bufferbe irja
     public void decryptBufferedFile(char[] key, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         // kiemeljuk a visszafejtendo fajl mutatojat
@@ -100,7 +101,7 @@ public class FileIO {
             return;
         }
         // kiiras es takaritas
-        Files.write(Paths.get(encSaveDir.toPath().toString(), encSrcFile.getName()), BYTE_BUFFER.toByteArray(), StandardOpenOption.CREATE);
+        Files.write(Paths.get(encSaveDir.toPath().toString(), encSrcFile.getName()), BYTE_BUFFER.toByteArray());
         clearBuffers();
     }
 
@@ -115,7 +116,7 @@ public class FileIO {
             return;
         }
         //kiiras es takaritas
-        Files.write(Paths.get(decSaveDir.toPath().toString(), decSrcFile.getName()), BYTE_BUFFER.toByteArray(), StandardOpenOption.CREATE);
+        Files.write(Paths.get(decSaveDir.toPath().toString(), decSrcFile.getName()), BYTE_BUFFER.toByteArray());
         clearBuffers();
     }
 
@@ -125,7 +126,6 @@ public class FileIO {
         return file1.toPath().equals(file2.getParentFile().toPath());
     }
 
-    
     // bufferek takaritasa
     private void clearBuffers() {
         BYTE_BUFFER.reset();
