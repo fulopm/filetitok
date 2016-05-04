@@ -7,7 +7,7 @@ package filetitok;
 public class Constants {
 
     // altalanos segedkonstansok
-    public static final String PROGRAM = "FileTitok ";
+    public static final String APP_NAME = "FileTitok";
     public static final String AUTHOR = "Fülöp Márk, 10.D";
     public static final String BREAK = System.getProperty("line.separator");
     public static final String E_SRC_FILE = "e_src_file";
@@ -22,7 +22,7 @@ public class Constants {
     public static final String UI_SAVE_DIR = "Mentés helye:";
     public static final String UI_ENCRYPTION = "Titkosítás";
     public static final String UI_DECRYPTION = "Visszafejtés";
-    public static final String UI_KEY = "Kulcs (min. 16 karakter):";
+    public static final String UI_PW = "Jelszó:";
     public static final String UI_SELECT = "Kiválasztás...";
 
     // felugro ablakokhoz kapcsolodo hibauzenetek
@@ -32,9 +32,10 @@ public class Constants {
     public static final String UI_MSG_D_SUCCESS = "Sikeres visszafejtés!" + BREAK + "Új fájl: ";
     public static final String UI_MSG_DIR_NOT_AVAIL = "Úgy tűnik, hogy a kiválasztott könyvtár valami miatt nem elérhető." + BREAK + "Ellenőrizze, hogy a programnak van-e jogosultsága olvasni azt," + BREAK + "majd próbálja újra.";
     public static final String UI_MSG_THREE_REACHED = "Három próbálkozás elérve, tovább nem próbálkozhat!" + BREAK + "A program kilép.";
-    public static final String UI_MSG_GENERAL_PARAMETER_ERROR = "Nincs megadva a visszafejtendő fájl, a kulcs, vagy a mentés helye," + BREAK + "vagy a kulcs hossza kevesebb, mint 16 karakter!";
-    public static final String UI_MSG_BAD_KEY = "Rossz kulcsot adott meg! Maradék próbálkozások száma: ";
-    public static final String UI_MSG_KEY = "Nagyon fontos, hogy a megadott kulcs hiányában" + BREAK + "a későbbiekben a titkosított fájl nem lesz visszafejthető." + BREAK + "A titkosító kulcsot jól jegyezze meg!";
+    public static final String UI_MSG_GENERAL_PARAMETER_ERROR = "Nincs megadva a titkosítandó/visszafejtendő fájl, a kulcs, vagy a mentés helye.";
+    public static final String UI_MSG_BAD_PW = "Rossz jelszót adott meg! Maradék próbálkozások száma: ";
+    public static final String UI_MSG_PW_LENGTH = "A jelszó túl gyenge. Ajánlott minimum 8 karakteres jelszót megadni." + BREAK + "Folytatja?";
+    public static final String UI_MSG_PW = "Nagyon fontos, hogy a megadott jelszó hiányában" + BREAK + "a későbbiekben a titkosított fájl nem lesz visszafejthető." + BREAK + "A titkosító kulcsot jól jegyezze meg!";
     public static final String UI_MSG_OVERIDE = "Felülírni készül az eredeti fájlt, mert a mentés" + BREAK + "helye és a forrásfájl helye megegyezik. Folytatja?";
 
 }

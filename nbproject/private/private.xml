@@ -3,9 +3,11 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/home/fulopm/NetBeansProjects/pwsafe/FileTitok/src/filetitok/Constants.java</file>
             <file>file:/home/fulopm/NetBeansProjects/pwsafe/FileTitok/src/filetitok/io/FileIO.java</file>
-            <file>file:/home/fulopm/NetBeansProjects/pwsafe/FileTitok/src/filetitok/gui/Constants.java</file>
+            <file>file:/home/fulopm/NetBeansProjects/pwsafe/FileTitok/src/filetitok/crypto/Cryptography.java</file>
             <file>file:/home/fulopm/NetBeansProjects/pwsafe/FileTitok/src/filetitok/gui/Window.java</file>
+            <file>file:/home/fulopm/NetBeansProjects/pwsafe/FileTitok/src/filetitok/FileTitok.java</file>
         </group>
     </open-files>
 </project-private>

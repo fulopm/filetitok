@@ -5,7 +5,6 @@
 package filetitok.gui;
 
 import filetitok.Constants;
-import com.sun.glass.events.KeyEvent;
 import filetitok.io.FileIO;
 import filetitok.misc.Util;
 import java.util.List;
@@ -18,7 +17,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.stream.Stream;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -47,8 +46,8 @@ public class Window implements ActionListener {
     private JLabel eDestDirLbl = null;
     private JButton eDestDirBtn = null;
 
-    private JLabel eKeyLbl = null;
-    private JPasswordField eKeyInp = null;
+    private JLabel ePassLbl = null;
+    private JPasswordField ePassInp = null;
 
     private JButton eOkBtn = null;
     /* ----- */
@@ -61,8 +60,8 @@ public class Window implements ActionListener {
     private JLabel dDestDirLbl = null;
     private JButton dDestDirBtn = null;
 
-    private JLabel dKeyLbl = null;
-    private JPasswordField dKeyInp = null;
+    private JLabel dPassLbl = null;
+    private JPasswordField dPassInp = null;
 
     private JButton dOkBtn = null;
 
@@ -101,7 +100,7 @@ public class Window implements ActionListener {
         c.gridwidth = 50;
         c.weightx = 50;
         c.weighty = 50;
-         ----- */
+        ----- */
 
  /* titkositas panel elemeinek inicializalasa es beallitasa */
         eSrcFileLbl = new JLabel(Constants.UI_TO_ENC);
@@ -123,10 +122,10 @@ public class Window implements ActionListener {
 
         eDestDirBtn.setBorder(new LineBorder(null, 0, false));
 
-        eKeyLbl = new JLabel(Constants.UI_KEY);
-        eKeyLbl.setFont(standardFont);
+        ePassLbl = new JLabel(Constants.UI_PW);
+        ePassLbl.setFont(standardFont);
 
-        eKeyInp = new JPasswordField();
+        ePassInp = new JPasswordField();
 
         /* ----- */
 
@@ -142,8 +141,8 @@ public class Window implements ActionListener {
         encryptionPanel.add(eSrcFileBtn);
         encryptionPanel.add(eDestDirLbl);
         encryptionPanel.add(eDestDirBtn);
-        encryptionPanel.add(eKeyLbl);
-        encryptionPanel.add(eKeyInp);
+        encryptionPanel.add(ePassLbl);
+        encryptionPanel.add(ePassInp);
         encryptionPanel.add(placeholder2);
         encryptionPanel.add(eOkBtn);
         /* ----- */
@@ -166,9 +165,9 @@ public class Window implements ActionListener {
         dDestDirBtn.setBorder(new LineBorder(null, 0, false));
         dDestDirBtn.addActionListener(this);
 
-        dKeyLbl = new JLabel(Constants.UI_KEY);
-        dKeyLbl.setFont(standardFont);
-        dKeyInp = new JPasswordField();
+        dPassLbl = new JLabel(Constants.UI_PW);
+        dPassLbl.setFont(standardFont);
+        dPassInp = new JPasswordField();
 
         dOkBtn = new JButton(Constants.UI_DECRYPTION);
         dOkBtn.addActionListener(this);
@@ -185,8 +184,8 @@ public class Window implements ActionListener {
         decryptionPanel.add(dSrcFileBtn);
         decryptionPanel.add(dDestDirLbl);
         decryptionPanel.add(dDestDirBtn);
-        decryptionPanel.add(dKeyLbl);
-        decryptionPanel.add(dKeyInp);
+        decryptionPanel.add(dPassLbl);
+        decryptionPanel.add(dPassInp);
         decryptionPanel.add(placeholder);
         decryptionPanel.add(dOkBtn);
         /* ----- */
@@ -198,7 +197,7 @@ public class Window implements ActionListener {
         frame = new JFrame();
         frame.setAutoRequestFocus(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setTitle(Constants.PROGRAM);
+        frame.setTitle(Constants.APP_NAME);
         frame.setIconImages(loadIcons());
         frame.setContentPane(contentPane);
         frame.pack();
@@ -221,10 +220,9 @@ public class Window implements ActionListener {
         } else if (source == eDestDirBtn) {
             eDestDirBtn.setText(registerFile(Constants.E_DIR, true));
         } else if (source == eOkBtn) {
-            message(null, Constants.UI_MSG_KEY, JOptionPane.WARNING_MESSAGE);
 
             // titkositas elvegzese
-            actionEncrypt(eKeyInp.getPassword());
+            actionEncrypt(ePassInp.getPassword());
             /* ----- */
 
  /* VISSZAFEJTESI MUVELETEK KEZELESE */
@@ -234,7 +232,7 @@ public class Window implements ActionListener {
             dDestDirBtn.setText(registerFile(Constants.D_DIR, true));
         } else if (source == dOkBtn) {
             // visszafejtes elvegzese
-            actionDecrypt(dKeyInp.getPassword());
+            actionDecrypt(dPassInp.getPassword());
         }
 
         /* ----- */
@@ -260,12 +258,18 @@ public class Window implements ActionListener {
     // fajl titkositas
     public void actionEncrypt(char[] key) {
         // kulcshosszusag es egyeb parameterek ellenorzese
-        if (key.length < 16
-                || !FileIO.FILE_BUFFER.containsKey(Constants.E_SRC_FILE)
+        if (!FileIO.FILE_BUFFER.containsKey(Constants.E_SRC_FILE)
                 || !FileIO.FILE_BUFFER.containsKey(Constants.E_DIR)) {
             message(null, Constants.UI_MSG_GENERAL_PARAMETER_ERROR, ERROR);
             return;
         }
+        if (key.length < 8) {
+            if (confirm(Constants.UI_MSG_PW_LENGTH, Constants.UI_MSG_WARNING) == JOptionPane.NO_OPTION) {
+                return;
+            }
+        }
+        message(null, Constants.UI_MSG_PW, JOptionPane.WARNING_MESSAGE);
+
         try {
             // fajl es konyvtar mutatoinak kiemelese
             final File encSrcFile = FileIO.FILE_BUFFER.get(Constants.E_SRC_FILE);
@@ -281,7 +285,7 @@ public class Window implements ActionListener {
             }
             // titkositas es kiiras elvegzese
             // csak az első 16 karaktert használjuk fel (okai vannak)
-            io.encryptBufferedFile(Arrays.copyOfRange(key, 0, 16), this);
+            io.encryptBufferedFile(key, this);
             io.encDoFinal(this);
             // tajekoztatas a folyamat sikeressegerol es az elkeszult fajl
             // eleresi utvonalarol
@@ -305,18 +309,17 @@ public class Window implements ActionListener {
             this.frame.dispose();
         }
         /* ----- */
-        if (key.length < 16
-                || !FileIO.FILE_BUFFER.containsKey(Constants.D_SRC_FILE)
+        if (!FileIO.FILE_BUFFER.containsKey(Constants.D_SRC_FILE)
                 || !FileIO.FILE_BUFFER.containsKey(Constants.D_DIR)) {
             message(null, Constants.UI_MSG_GENERAL_PARAMETER_ERROR, ERROR);
             return;
         }
+
         try {
             final File decSrcFile = FileIO.FILE_BUFFER.get(Constants.D_SRC_FILE);
             final File decSaveDir = FileIO.FILE_BUFFER.get(Constants.D_DIR);
             FileIO io = new FileIO();
-            // csak az első 16 karaktert használjuk fel (okai vannak)
-            io.decryptBufferedFile(Arrays.copyOfRange(key, 0, 16), this);
+            io.decryptBufferedFile(key, this);
             io.decDoFinal(this);
             message(null,
                     Constants.UI_MSG_D_SUCCESS + decSaveDir.toPath()
@@ -324,7 +327,7 @@ public class Window implements ActionListener {
                     + decSrcFile.getName(),
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (BadPaddingException e) {
-            message(null, Constants.UI_MSG_BAD_KEY + (3 - tries), ERROR);
+            message(null, Constants.UI_MSG_BAD_PW + (3 - tries), ERROR);
             // megnoveljuk a probalkozasok szamat vezeto valtozo erteket 1-gyel
             tries++;
         } catch (IOException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException | IllegalBlockSizeException | InvalidKeyException ex) {
@@ -335,8 +338,8 @@ public class Window implements ActionListener {
     }
 
     public void reset() {
-        eKeyInp.setText("");
-        dKeyInp.setText("");
+        ePassInp.setText("");
+        dPassInp.setText("");
         eSrcFileBtn.setText(Constants.UI_SELECT);
         eDestDirBtn.setText(Constants.UI_SELECT);
         dSrcFileBtn.setText(Constants.UI_SELECT);

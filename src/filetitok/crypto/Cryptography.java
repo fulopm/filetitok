@@ -7,6 +7,7 @@ package filetitok.crypto;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -37,13 +38,22 @@ public class Cryptography {
     };
 
     private final Cipher c;
+    private final MessageDigest md5;
     private final String AES_CBC_PKCS5 = "AES/CBC/PKCS5Padding";
+     private final String MD5= "MD5";
 
     public Cryptography() throws NoSuchAlgorithmException, NoSuchPaddingException {
         c = Cipher.getInstance(AES_CBC_PKCS5);
+        md5 = MessageDigest.getInstance(MD5);
     }
 
     public byte[] encryptBytes(byte[] data, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException {
+        // lekerjuk a kulcs md5 hashjet (a kulonbozo meretu jelszavak miatt, 
+        // mert ugye nekunk minden esetben 128 bites kulcsra van szuksegunk, es
+        // az MD5 hash funkcio minden esetben 128 bites hash erteket terit
+        // vissza), es a jelszobol megfelelo meretu kulcsot faragunk
+        // jelszo != kulcs !!!
+        key = hash(key);
         // iv betoltese a byte tombbol
         IvParameterSpec IV = new IvParameterSpec(bytesIV);
         // SecretKey objektum betoltese a megadott kulcs bajtokbol
@@ -56,6 +66,12 @@ public class Cryptography {
     }
 
     public byte[] decryptBytes(byte[] data, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+        // lekerjuk a kulcs md5 hashjet (a kulonbozo meretu jelszavak miatt, 
+        // mert ugye nekunk minden esetben 128 bites kulcsra van szuksegunk, es
+        // az MD5 hash funkcio minden esetben 128 bites hash erteket terit
+        // vissza), es a jelszobol megfelelo meretu kulcsot faragunk
+        // jelszo != kulcs !!!
+        key = hash(key);
         // iv betoltese a byte tombbol
         IvParameterSpec IV = new IvParameterSpec(bytesIV);
         // SecretKey objektum betoltese a megadott kulcs bajtokbol
@@ -66,5 +82,9 @@ public class Cryptography {
         return c.doFinal(data);
 
     }
-
+    
+    // megadott bajt tombbol md5 hashet kepez
+    public byte[] hash(byte[] key) {
+        return md5.digest(key);
+    }
 }
