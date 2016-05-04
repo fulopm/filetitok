@@ -1,3 +1,7 @@
+/*
+ Készítette: Fülöp Márk 10.D <fulop.mark@outlook.com>
+ Projektmunka programozás gyakorlat órára
+ */
 package filetitok.io;
 
 import filetitok.crypto.Cryptography;
