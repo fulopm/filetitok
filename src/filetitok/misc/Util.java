@@ -1,6 +1,5 @@
 /*
- Készítette: Fülöp Márk 10.D <fulop.mark@outlook.com>
- Projektmunka programozás gyakorlat órára
+ Készítette: Fülöp Márk <fulop.mark@outlook.com>
  */
 package filetitok.misc;
 
@@ -13,9 +12,9 @@ import java.nio.charset.StandardCharsets;
 public class Util {
 
     private Util() {
-        
+
     }
-    // egy karakter tombot bajt tombbe alakit at
+
     public static final byte[] convertCharsToBytes(char[] c) {
 
         return new String(c).getBytes(StandardCharsets.UTF_8);

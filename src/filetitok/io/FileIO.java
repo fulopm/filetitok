@@ -1,6 +1,6 @@
 /*
- Készítette: Fülöp Márk 10.D <fulop.mark@outlook.com>
- Projektmunka programozás gyakorlat órára
+ Készítette: Fülöp Márk <fulop.mark@outlook.com>
+
  */
 package filetitok.io;
 
@@ -28,107 +28,89 @@ public class FileIO {
 
     final Cryptography crypt;
 
-    // az aszinkron mukodeshez szukseg van egy dinamikusan novekvo meretu adattarolora,
-    // ebben az eppen aktualis bajtokat tarolja a program, tulajdonkeppen egy memoria
     final ByteArrayOutputStream BYTE_BUFFER = new ByteArrayOutputStream();
 
-    // ez a kulcs-ertek tipusu objektum arra valo, hogy a Window class munkajat
-    // segitse, amely fajl-, es konyvtarneveket tarol az objektumban, hogy ezek
-    // bekereset meg lehessen valositani tobb lepesben, anelkul hogy az elozo
-    // ertek elveszne. hasznalatanal figyelni kell arra, hogy minden titkositott
-    // fajl utan ki kell uritnenunk ertelem szeruen -> clearBuffers() metodus
-    public static final Map<String, File> FILE_BUFFER = new HashMap<>();
+    public static final Map<String, File> FILE_CACHE = new HashMap<>();
 
     public FileIO() throws NoSuchAlgorithmException, NoSuchPaddingException {
         crypt = new Cryptography();
     }
 
-    // ellenorzi a fajl elerhetoseget (letezik-e, tudjuk-e olvasni, es irhato-e,
-    // ha writeAccess parameter igaz)
     public boolean isFileOk(File file, boolean writeAccess) {
         return (writeAccess ? file.exists() && file.canRead() && file.canWrite() : file.exists() && file.canRead());
     }
 
-    // a file bufferben levo fajl bajtjait titkositja, es byte bufferbe irja
     public void encryptBufferedFile(byte[] pw, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-        // kiemeljuk a titkositando fajl mutatojat
-        final File encSrcFile = FileIO.FILE_BUFFER.get(Constants.E_SRC_FILE);
 
-        /* ellenorzesek, beolvasas es titkositas elvegzese */
+        final File encSrcFile = FileIO.FILE_CACHE.get(Constants.E_SRC_FILE);
+
         byte[] keyBytes;
         if (isFileOk(encSrcFile, false)) {
             keyBytes = crypt.hash(pw);
             crypt.initIV();
             try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(encSrcFile))) {
-                crypt.encryptBytes(bis, BYTE_BUFFER, keyBytes);
+                crypt.encryptStream(bis, BYTE_BUFFER, keyBytes);
             }
-            /* ----- */
+
         } else {
             w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
         }
 
     }
 
-    // a file bufferben levo fajl bajtjait visszafejti, es byte bufferbe irja
     public void decryptBufferedFile(byte[] pw, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-        // kiemeljuk a visszafejtendo fajl mutatojat
-        final File decSrcFile = FileIO.FILE_BUFFER.get(Constants.D_SRC_FILE);
 
-        /* ellenorzesek, beolvasas es visszafejtes elvegzese */
+        final File decSrcFile = FileIO.FILE_CACHE.get(Constants.D_SRC_FILE);
+
         byte[] keyBytes;
-        // fajl ellenorzese
+
         if (isFileOk(decSrcFile, false)) {
             keyBytes = crypt.hash(pw);
             try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(decSrcFile))) {
-                crypt.decryptBytes(bis, BYTE_BUFFER, keyBytes);
+                crypt.decryptStream(bis, BYTE_BUFFER, keyBytes);
             }
-            /* ----- */
+
         } else {
             w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
         }
 
     }
 
-    // ez a metodus vegzi el a titkositott bajtok kiirasat a byte bufferbol
     public void encDoFinal(Window w) throws IOException {
-        // mutatok kiemelese
-        final File encSrcFile = FileIO.FILE_BUFFER.get(Constants.E_SRC_FILE);
-        final File encSaveDir = FileIO.FILE_BUFFER.get(Constants.E_DIR);
-        // fajlellenorzes
+
+        final File encSrcFile = FileIO.FILE_CACHE.get(Constants.E_SRC_FILE);
+        final File encSaveDir = FileIO.FILE_CACHE.get(Constants.E_DIR);
+
         if (!isFileOk(encSaveDir, true)) {
             w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
             return;
         }
-        // kiiras es takaritas
+
         Files.write(Paths.get(encSaveDir.toPath().toString(), encSrcFile.getName()), BYTE_BUFFER.toByteArray());
-        clearBuffers();
+        clearCaches();
     }
 
-    // visszafejtett bajtok kiirasa a fajlba
     public void decDoFinal(Window w) throws IOException {
-        // mutatok kiemelese
-        final File decSrcFile = FileIO.FILE_BUFFER.get(Constants.D_SRC_FILE);
-        final File decSaveDir = FileIO.FILE_BUFFER.get(Constants.D_DIR);
-        // fajlellenorzes
+
+        final File decSrcFile = FileIO.FILE_CACHE.get(Constants.D_SRC_FILE);
+        final File decSaveDir = FileIO.FILE_CACHE.get(Constants.D_DIR);
+
         if (!isFileOk(decSaveDir, true)) {
             w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
             return;
         }
-        //kiiras es takaritas
+
         Files.write(Paths.get(decSaveDir.toPath().toString(), decSrcFile.getName()), BYTE_BUFFER.toByteArray());
-        clearBuffers();
+        clearCaches();
     }
 
-    // ez a metodus azt ellenorzi, hogy ha file1-et elmentjuk, az nem fogja-e
-    // felulirni file2-t
     public boolean willOveride(File file1, File file2) {
         return file1.toPath().equals(file2.getParentFile().toPath());
     }
 
-    // bufferek takaritasa
-    private void clearBuffers() {
+    private void clearCaches() {
         BYTE_BUFFER.reset();
-        FILE_BUFFER.clear();
+        FILE_CACHE.clear();
     }
 
 }

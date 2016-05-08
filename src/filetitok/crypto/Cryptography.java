@@ -1,6 +1,5 @@
 /*
- Készítette: Fülöp Márk 10.D <fulop.mark@outlook.com>
- Projektmunka programozás gyakorlat órára
+ Készítette: Fülöp Márk <fulop.mark@outlook.com>
  */
 package filetitok.crypto;
 
@@ -43,10 +42,9 @@ public class Cryptography {
         new SecureRandom().nextBytes(bytesIV);
     }
 
-    public void encryptBytes(InputStream in, OutputStream out, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException {
+    public void encryptStream(InputStream in, OutputStream out, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException {
         out.write(bytesIV);
         out.flush();
-        // cipher objektum inicializalasa mod es iv megadasaval
         c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(bytesIV));
         out = new CipherOutputStream(out, c);
         byte[] buf = new byte[1024];
@@ -57,7 +55,7 @@ public class Cryptography {
         out.close();
     }
 
-    public void decryptBytes(InputStream in, OutputStream out, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException {
+    public void decryptStream(InputStream in, OutputStream out, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException {
         in.read(bytesIV);
         c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(bytesIV));
         in = new CipherInputStream(in, c);
@@ -70,7 +68,6 @@ public class Cryptography {
 
     }
 
-    // megadott bajt tombbol md5 hashet kepez
     public byte[] hash(byte[] key) {
         return md5.digest(key);
     }

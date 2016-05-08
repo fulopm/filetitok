@@ -1,12 +1,11 @@
 /*
- Készítette: Fülöp Márk 10.D <fulop.mark@outlook.com>
- Projektmunka programozás gyakorlat órára
+ Készítette: Fülöp Márk <fulop.mark@outlook.com>
  */
 package filetitok;
 
 public class Constants {
 
-    // altalanos segedkonstansok
+
     public static final String APP_NAME = "FileTitok";
     public static final String AUTHOR = "Fülöp Márk, 10.D";
     public static final String BREAK = System.getProperty("line.separator");
@@ -16,7 +15,7 @@ public class Constants {
     public static final String D_DIR = "d_dir";
     public static final String UI_FONT_NAME = "Segoe UI";
 
-    // UI konstansok (labelek es gombok szovegei)
+
     public static final String UI_TO_ENC = "Titkosítandó fájl:";
     public static final String UI_TO_DEC = "Visszafejtendő fájl:";
     public static final String UI_SAVE_DIR = "Mentés helye:";
@@ -25,7 +24,7 @@ public class Constants {
     public static final String UI_PW = "Jelszó:";
     public static final String UI_SELECT = "Kiválasztás...";
 
-    // felugro ablakokhoz kapcsolodo hibauzenetek
+
     public static final String UI_MSG_WARNING = "Figyelem!";
     public static final String UI_MSG = "Üzenet";
     public static final String UI_MSG_E_SUCCESS = "Sikeres titkosítás!" + BREAK + "Új fájl: ";

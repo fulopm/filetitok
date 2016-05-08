@@ -1,6 +1,5 @@
 /*
- Készítette: Fülöp Márk 10.D <fulop.mark@outlook.com>
- Projektmunka programozás gyakorlat órára
+ Készítette: Fülöp Márk <fulop.mark@outlook.com>
  */
 package filetitok;
 
@@ -16,12 +15,9 @@ public class FileTitok {
 
     }
 
-    // look and feel (kinézet) beállítása
     private static void init() throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
-        /* szoveg elsimitas bekapcsolasa */
         System.setProperty("awt.useSystemAAFontSettings", "on");
         System.setProperty("swing.aatext", "true");
-        /* ----- */
 
         for (final LookAndFeelInfo i : UIManager.getInstalledLookAndFeels()) {
             if (i.getName().equals("Nimbus")) {

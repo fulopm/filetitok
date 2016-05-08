@@ -1,6 +1,5 @@
 /*
- Készítette: Fülöp Márk 10.D <fulop.mark@outlook.com>
- Projektmunka programozás gyakorlat órára
+ Készítette: Fülöp Márk <fulop.mark@outlook.com>
  */
 package filetitok.gui;
 
@@ -17,6 +16,8 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -26,18 +27,12 @@ import javax.swing.border.TitledBorder;
 
 public class Window implements ActionListener {
 
-    // main frame, es a content panelje
     private JFrame frame;
     private JPanel contentPane;
 
-    // ket kulon panel, amelyek kulon a titkositashoz es a visszafejteshez
-    // tartalmazzak az kezeloszerveket -> ezeket adjuk a contentPane-hez
     private JPanel encryptionPanel;
     private JPanel decryptionPanel;
 
-    /* TITKOSITAS
-    kezeloszervek amik a titkositas panelhez hasznalandoak -> ezeket adjuk
-     hozza az encryptionPanelhez, es igy epul fel a GUI*/
     private JLabel eSrcFileLbl;
     private JButton eSrcFileBtn;
 
@@ -48,10 +43,7 @@ public class Window implements ActionListener {
     private JPasswordField ePassInp;
 
     private JButton eOkBtn;
-    /* ----- */
 
- /* VISSZAFEJTES 
-    kezeloszervek melyek a visszafejtes panelhez hasznalandoak */
     private JLabel dSrcFileLbl;
     private JButton dSrcFileBtn;
 
@@ -63,25 +55,18 @@ public class Window implements ActionListener {
 
     private JButton dOkBtn;
 
-    /* ----- */
-    // placeholder objektumok (sima JLabel uresen)
     private final JLabel placeholder = new JLabel("");
     private final JLabel placeholder2 = new JLabel("");
 
-    // betutipus konstansok
     private final Font standardFont = new Font(Constants.UI_FONT_NAME, Font.PLAIN, 11);
     private final Font footerFont = new Font(Constants.UI_FONT_NAME, Font.PLAIN, 9);
 
-    // hogy ne kelljen mindig kiirni azt hogy JOptionPane.xy
     private final int ERROR = JOptionPane.ERROR_MESSAGE;
 
-    // a rossz probalkozasok szamlaloja
     private int tries = 0;
 
-    // osszes objektum inicializalasa, GUI felepitese, es lathatova tetele
     public void createAndShowGUI() {
 
-        /* main frame content panejenek inicializasa, es layout beallitasa */
         contentPane = new JPanel();
         contentPane.setOpaque(true);
 
@@ -89,9 +74,6 @@ public class Window implements ActionListener {
 
         contentPane.setBorder(BorderFactory.createTitledBorder(new TitledBorder(""), Constants.AUTHOR, TitledBorder.TRAILING, TitledBorder.BOTTOM, footerFont, Color.black));
 
-        /* ----- */
-
- /* titkositas panel elemeinek inicializalasa es beallitasa */
         eSrcFileLbl = new JLabel(Constants.UI_TO_ENC);
         eSrcFileLbl.setFont(standardFont);
 
@@ -113,16 +95,11 @@ public class Window implements ActionListener {
 
         ePassInp = new JPasswordField();
 
-        /* ----- */
-
- /* titkositas panel inicializalasa, beallitasa */
         encryptionPanel = new JPanel();
         encryptionPanel.setOpaque(true);
         encryptionPanel.setBorder(BorderFactory.createTitledBorder(Constants.UI_ENCRYPTION));
         encryptionPanel.setLayout(new GridLayout(4, 2, 2, 2));
-        /* ----- */
 
- /* titkositas panel eleminek hozzaadasa a panelhez */
         encryptionPanel.add(eSrcFileLbl);
         encryptionPanel.add(eSrcFileBtn);
         encryptionPanel.add(eDestDirLbl);
@@ -131,12 +108,9 @@ public class Window implements ActionListener {
         encryptionPanel.add(ePassInp);
         encryptionPanel.add(placeholder2);
         encryptionPanel.add(eOkBtn);
-        /* ----- */
 
-        // main frame content panejehez hozzaadjuk a titositas panelt
         contentPane.add(encryptionPanel);
 
-        /* visszafejtes panel elemeinek inicializalasa */
         dSrcFileLbl = new JLabel(Constants.UI_TO_DEC);
         dSrcFileLbl.setFont(standardFont);
 
@@ -158,9 +132,6 @@ public class Window implements ActionListener {
         dOkBtn = new JButton(Constants.UI_DECRYPTION);
         dOkBtn.addActionListener(this);
 
-        /* ----- */
-
- /* visszafejtes panel elemeinek hozzadasa a panelhez */
         decryptionPanel = new JPanel();
         decryptionPanel.setOpaque(true);
         decryptionPanel.setBorder(BorderFactory.createTitledBorder(Constants.UI_DECRYPTION));
@@ -174,12 +145,9 @@ public class Window implements ActionListener {
         decryptionPanel.add(dPassInp);
         decryptionPanel.add(placeholder);
         decryptionPanel.add(dOkBtn);
-        /* ----- */
 
-        // main frame content panejehez hozzaadjuk a visszafejtes panelt
         contentPane.add(decryptionPanel);
 
-        /* main frame inicializalasa es megjelenitese */
         frame = new JFrame();
         frame.setAutoRequestFocus(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -190,41 +158,33 @@ public class Window implements ActionListener {
         frame.setResizable(false);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        /* ----- */
+
     }
 
-    // action listener a gombokhoz
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        // eventet kivalto objektum kiemelese
         final Object source = e.getSource();
 
-        /* TITKOSITASI MUVELETEK KEZELESE */
         if (source == eSrcFileBtn) {
             eSrcFileBtn.setText(registerFile(Constants.E_SRC_FILE, false));
         } else if (source == eDestDirBtn) {
             eDestDirBtn.setText(registerFile(Constants.E_DIR, true));
         } else if (source == eOkBtn) {
 
-            // titkositas elvegzese
             actionEncrypt(ePassInp.getPassword());
-            /* ----- */
 
- /* VISSZAFEJTESI MUVELETEK KEZELESE */
         } else if (source == dSrcFileBtn) {
             dSrcFileBtn.setText(registerFile(Constants.D_SRC_FILE, false));
         } else if (source == dDestDirBtn) {
             dDestDirBtn.setText(registerFile(Constants.D_DIR, true));
         } else if (source == dOkBtn) {
-            // visszafejtes elvegzese
+
             actionDecrypt(dPassInp.getPassword());
         }
 
-        /* ----- */
     }
 
-    // grafikus hibauzentet megjelenitese -> rovidebb
     public void message(Exception e, String message, int type) {
         if (e == null) {
             JOptionPane.showMessageDialog(this.frame, message, Constants.UI_MSG, type);
@@ -236,16 +196,14 @@ public class Window implements ActionListener {
 
     }
 
-    // felhasznalonak igen-nem opcios kerdezo ablakot jelenit meg ->rovidebb
     public int confirm(String message, String title) {
         return JOptionPane.showConfirmDialog(this.frame, message, title, JOptionPane.YES_NO_OPTION);
     }
 
-    // fajl titkositas
     public void actionEncrypt(char[] key) {
-        // kulcshosszusag es egyeb parameterek ellenorzese
-        if (!FileIO.FILE_BUFFER.containsKey(Constants.E_SRC_FILE)
-                || !FileIO.FILE_BUFFER.containsKey(Constants.E_DIR)) {
+
+        if (!FileIO.FILE_CACHE.containsKey(Constants.E_SRC_FILE)
+                || !FileIO.FILE_CACHE.containsKey(Constants.E_DIR)) {
             message(null, Constants.UI_MSG_GENERAL_PARAMETER_ERROR, ERROR);
             return;
         }
@@ -255,23 +213,19 @@ public class Window implements ActionListener {
         message(null, Constants.UI_MSG_PW, JOptionPane.WARNING_MESSAGE);
 
         try {
-            // fajl es konyvtar mutatoinak kiemelese
-            final File encSrcFile = FileIO.FILE_BUFFER.get(Constants.E_SRC_FILE);
-            final File encSaveDir = FileIO.FILE_BUFFER.get(Constants.E_DIR);
+
+            final File encSrcFile = FileIO.FILE_CACHE.get(Constants.E_SRC_FILE);
+            final File encSaveDir = FileIO.FILE_CACHE.get(Constants.E_DIR);
             FileIO io = new FileIO();
-            // annak ellenorzese, hogy a titkositando fajl felulrija-e majd az
-            // eredeti fájlt
+
             if (io.willOveride(encSaveDir, encSrcFile) && confirm(Constants.UI_MSG_OVERIDE, Constants.UI_MSG_WARNING) == JOptionPane.NO_OPTION) {
 
                 return;
 
             }
-            // titkositas es kiiras elvegzese
-            // csak az első 16 karaktert használjuk fel (okai vannak)
+
             io.encryptBufferedFile(Util.convertCharsToBytes(key), this);
             io.encDoFinal(this);
-            // tajekoztatas a folyamat sikeressegerol es az elkeszult fajl
-            // eleresi utvonalarol
             message(null,
                     Constants.UI_MSG_E_SUCCESS + encSaveDir.toPath()
                     + System.getProperty("file.separator")
@@ -286,21 +240,20 @@ public class Window implements ActionListener {
 
     public void actionDecrypt(char[] key) {
 
-        /* figyelmeztetes es program bezarasa, ha harom rossz probalkozas tortent*/
         if (tries == 3) {
             message(null, Constants.UI_MSG_THREE_REACHED, ERROR);
             this.frame.dispose();
         }
-        /* ----- */
-        if (!FileIO.FILE_BUFFER.containsKey(Constants.D_SRC_FILE)
-                || !FileIO.FILE_BUFFER.containsKey(Constants.D_DIR)) {
+
+        if (!FileIO.FILE_CACHE.containsKey(Constants.D_SRC_FILE)
+                || !FileIO.FILE_CACHE.containsKey(Constants.D_DIR)) {
             message(null, Constants.UI_MSG_GENERAL_PARAMETER_ERROR, ERROR);
             return;
         }
 
         try {
-            final File decSrcFile = FileIO.FILE_BUFFER.get(Constants.D_SRC_FILE);
-            final File decSaveDir = FileIO.FILE_BUFFER.get(Constants.D_DIR);
+            final File decSrcFile = FileIO.FILE_CACHE.get(Constants.D_SRC_FILE);
+            final File decSaveDir = FileIO.FILE_CACHE.get(Constants.D_DIR);
             FileIO io = new FileIO();
             io.decryptBufferedFile(Util.convertCharsToBytes(key), this);
             io.decDoFinal(this);
@@ -312,7 +265,6 @@ public class Window implements ActionListener {
 
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | IOException | InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
             message(null, Constants.UI_MSG_BAD_PW + (3 - tries), ERROR);
-            // megnoveljuk a probalkozasok szamat vezeto valtozo erteket 1-gyel
             tries++;
         } finally {
             reset();
@@ -328,11 +280,6 @@ public class Window implements ActionListener {
         dDestDirBtn.setText(Constants.UI_SELECT);
     }
 
-    // beker egy fajlt a usertol egy
-    // filechooser segitsegevel, majd regisztralja azt a file bufferben
-    // (elso parameter: kulcs, amivel kesobb hivatkozunk a fajlra, a masodik
-    // parameter true-ra allitasaval pedig szukithetjuk a valaszthato fajlok
-    // koret csak konyvtarakra)
     public String registerFile(String keyToRegister, boolean onlyDir) {
         final JFileChooser chooser = new JFileChooser();
         if (onlyDir) {
@@ -341,19 +288,15 @@ public class Window implements ActionListener {
 
         if (chooser.showOpenDialog(this.frame) == JFileChooser.APPROVE_OPTION) {
             File selected = chooser.getSelectedFile();
-            FileIO.FILE_BUFFER.put(keyToRegister, selected);
+            FileIO.FILE_CACHE.put(keyToRegister, selected);
             return Util.trim(selected.getName());
         } else {
-            message(null, "Nem választott fájlt!", ERROR);
             reset();
             return Constants.UI_SELECT;
         }
 
     }
 
-    // ez a metodus azert szukseges, mert minden operacios rendszeren mas-mas
-    // meretu ikon kell, hogy legyen hasznalva esztetikai okok miatt, es igy a 
-    // java ki tudja valasztani hogy O melyik meretut szeretne hasznalni
     public List<Image> loadIcons() {
         List<Image> temp = new ArrayList<>();
         try {
