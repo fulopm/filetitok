@@ -22,17 +22,13 @@ public class FileTitok {
         System.setProperty("awt.useSystemAAFontSettings", "on");
         System.setProperty("swing.aatext", "true");
         /* ----- */
-        boolean set = false;
-       
-            for (LookAndFeelInfo i : UIManager.getInstalledLookAndFeels()) {
-                if (i.getName().equals("Nimbus")) {
-                    UIManager.setLookAndFeel(i.getClassName());
-                    set = true;
-                    break;
-                }
-            }
 
-       
+        for (final LookAndFeelInfo i : UIManager.getInstalledLookAndFeels()) {
+            if (i.getName().equals("Nimbus")) {
+                UIManager.setLookAndFeel(i.getClassName());
+
+            }
+        }
 
     }
 }

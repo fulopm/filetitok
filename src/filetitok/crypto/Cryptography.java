@@ -5,15 +5,19 @@
 package filetitok.crypto;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -23,68 +27,57 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public class Cryptography {
 
-    /* inicializacios vektor forrastombje (ez igy nem biztonsagos) 
-    
-    bovebben: ha ket fajl elso blokkja, es a kulcs azonos, ugyan azt az eredményt
-              fogjuk kapni a titkositott szovegben
-    megoldas: SafeRandom objektummal mindig random ertekekkel kell feltolteni
-              az IV forrastombjet
-     */
-    private static final byte[] bytesIV = {
-        0x1F, 0x2A, 0x1B, 0x30,
-        0x40, 0x3F, 0x2D, 0x44,
-        0x14, 0x5C, 0x7E, 0x05,
-        0x0A, 0x07, 0x10, 0x40
-    };
-
     private final Cipher c;
     private final MessageDigest md5;
     private final String AES_CBC_PKCS5 = "AES/CBC/PKCS5Padding";
-     private final String MD5= "MD5";
+    private final String MD5 = "MD5";
+    private final int BLOCK_SIZE = 16;
+    private final byte[] bytesIV = new byte[BLOCK_SIZE];
 
     public Cryptography() throws NoSuchAlgorithmException, NoSuchPaddingException {
         c = Cipher.getInstance(AES_CBC_PKCS5);
         md5 = MessageDigest.getInstance(MD5);
     }
 
-    public byte[] encryptBytes(byte[] data, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException {
-        // lekerjuk a kulcs md5 hashjet (a kulonbozo meretu jelszavak miatt, 
-        // mert ugye nekunk minden esetben 128 bites kulcsra van szuksegunk, es
-        // az MD5 hash funkcio minden esetben 128 bites hash erteket terit
-        // vissza), es a jelszobol megfelelo meretu kulcsot faragunk
-        // jelszo != kulcs !!!
-        key = hash(key);
-        // iv betoltese a byte tombbol
-        IvParameterSpec IV = new IvParameterSpec(bytesIV);
-        // SecretKey objektum betoltese a megadott kulcs bajtokbol
-        SecretKey k = new SecretKeySpec(key, "AES");
+    public void initIV() {
+        new SecureRandom().nextBytes(bytesIV);
+    }
+
+    public void encryptBytes(InputStream in, OutputStream out, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException {
+        out.write(bytesIV);
+        out.flush();
         // cipher objektum inicializalasa mod es iv megadasaval
-        c.init(Cipher.ENCRYPT_MODE, k, IV);
-        // titkositas elvegzese, es titkositott bajtok visszaadasa
-        return c.doFinal(data);
+        c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(bytesIV));
+        out = new CipherOutputStream(out, c);
+        byte[] buf = new byte[1024];
+        int numRead = 0;
+        while ((numRead = in.read(buf)) >= 0) {
+            out.write(buf, 0, numRead);
+        }
+        out.close();
+    }
+
+    public void decryptBytes(InputStream in, OutputStream out, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException {
+        in.read(bytesIV);
+        c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(bytesIV));
+        in = new CipherInputStream(in, c);
+        byte[] buf = new byte[1024];
+        int numRead = 0;
+        while ((numRead = in.read(buf)) >= 0) {
+            out.write(buf, 0, numRead);
+        }
+        out.close();
 
     }
 
-    public byte[] decryptBytes(byte[] data, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-        // lekerjuk a kulcs md5 hashjet (a kulonbozo meretu jelszavak miatt, 
-        // mert ugye nekunk minden esetben 128 bites kulcsra van szuksegunk, es
-        // az MD5 hash funkcio minden esetben 128 bites hash erteket terit
-        // vissza), es a jelszobol megfelelo meretu kulcsot faragunk
-        // jelszo != kulcs !!!
-        key = hash(key);
-        // iv betoltese a byte tombbol
-        IvParameterSpec IV = new IvParameterSpec(bytesIV);
-        // SecretKey objektum betoltese a megadott kulcs bajtokbol
-        SecretKey k = new SecretKeySpec(key, "AES");
-        // cipher objektum inicializalasa mod es iv megadasaval
-        c.init(Cipher.DECRYPT_MODE, k, IV);
-        // visszafejtes elvegzese, es bajtok visszaadasa
-        return c.doFinal(data);
-
-    }
-    
     // megadott bajt tombbol md5 hashet kepez
     public byte[] hash(byte[] key) {
         return md5.digest(key);
+    }
+
+    public byte[] getIV() {
+        byte[] temp = new byte[BLOCK_SIZE];
+        System.arraycopy(bytesIV, 0, temp, 0, BLOCK_SIZE);
+        return temp;
     }
 }

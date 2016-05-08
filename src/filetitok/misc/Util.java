@@ -1,13 +1,10 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ Készítette: Fülöp Márk 10.D <fulop.mark@outlook.com>
+ Projektmunka programozás gyakorlat órára
  */
 package filetitok.misc;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 /**
  *
@@ -15,6 +12,9 @@ import java.util.Arrays;
  */
 public class Util {
 
+    private Util() {
+        
+    }
     // egy karakter tombot bajt tombbe alakit at
     public static final byte[] convertCharsToBytes(char[] c) {
 

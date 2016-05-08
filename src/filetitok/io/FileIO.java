@@ -7,17 +7,18 @@ package filetitok.io;
 import filetitok.crypto.Cryptography;
 import filetitok.Constants;
 import filetitok.gui.Window;
-import filetitok.misc.Util;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.Map;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -36,7 +37,7 @@ public class FileIO {
     // bekereset meg lehessen valositani tobb lepesben, anelkul hogy az elozo
     // ertek elveszne. hasznalatanal figyelni kell arra, hogy minden titkositott
     // fajl utan ki kell uritnenunk ertelem szeruen -> clearBuffers() metodus
-    public static final HashMap<String, File> FILE_BUFFER = new HashMap<>();
+    public static final Map<String, File> FILE_BUFFER = new HashMap<>();
 
     public FileIO() throws NoSuchAlgorithmException, NoSuchPaddingException {
         crypt = new Cryptography();
@@ -49,19 +50,18 @@ public class FileIO {
     }
 
     // a file bufferben levo fajl bajtjait titkositja, es byte bufferbe irja
-    public void encryptBufferedFile(char[] key, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+    public void encryptBufferedFile(byte[] pw, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         // kiemeljuk a titkositando fajl mutatojat
         final File encSrcFile = FileIO.FILE_BUFFER.get(Constants.E_SRC_FILE);
 
         /* ellenorzesek, beolvasas es titkositas elvegzese */
-        byte[] fileBytes;
         byte[] keyBytes;
-        byte[] encryptedBytes;
         if (isFileOk(encSrcFile, false)) {
-            fileBytes = Files.readAllBytes(encSrcFile.toPath());
-            keyBytes = Util.convertCharsToBytes(key);
-            encryptedBytes = crypt.encryptBytes(fileBytes, keyBytes);
-            BYTE_BUFFER.write(encryptedBytes);
+            keyBytes = crypt.hash(pw);
+            crypt.initIV();
+            try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(encSrcFile))) {
+                crypt.encryptBytes(bis, BYTE_BUFFER, keyBytes);
+            }
             /* ----- */
         } else {
             w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
@@ -70,23 +70,18 @@ public class FileIO {
     }
 
     // a file bufferben levo fajl bajtjait visszafejti, es byte bufferbe irja
-    public void decryptBufferedFile(char[] key, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+    public void decryptBufferedFile(byte[] pw, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         // kiemeljuk a visszafejtendo fajl mutatojat
         final File decSrcFile = FileIO.FILE_BUFFER.get(Constants.D_SRC_FILE);
 
         /* ellenorzesek, beolvasas es visszafejtes elvegzese */
-        byte[] fileBytes;
         byte[] keyBytes;
-        byte[] decryptedBytes;
         // fajl ellenorzese
         if (isFileOk(decSrcFile, false)) {
-            // teljes fajl beolvasa
-            fileBytes = Files.readAllBytes(decSrcFile.toPath());
-            // kulcs karaktereinek bajtokka konvertalasa
-            keyBytes = Util.convertCharsToBytes(key);
-            // visszafejtes, es bufferhez adas
-            decryptedBytes = crypt.decryptBytes(fileBytes, keyBytes);
-            BYTE_BUFFER.write(decryptedBytes);
+            keyBytes = crypt.hash(pw);
+            try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(decSrcFile))) {
+                crypt.decryptBytes(bis, BYTE_BUFFER, keyBytes);
+            }
             /* ----- */
         } else {
             w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
