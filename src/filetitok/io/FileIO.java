@@ -6,23 +6,18 @@ package filetitok.io;
 
 import filetitok.crypto.Cryptography;
 import filetitok.Constants;
+import filetitok.crypto.CryptoException;
 import filetitok.gui.Window;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.swing.JOptionPane;
 
 public class FileIO {
 
@@ -32,7 +27,7 @@ public class FileIO {
 
     public static final Map<String, File> FILE_CACHE = new HashMap<>();
 
-    public FileIO() throws NoSuchAlgorithmException, NoSuchPaddingException {
+    public FileIO() throws CryptoException {
         crypt = new Cryptography();
     }
 
@@ -40,64 +35,72 @@ public class FileIO {
         return (writeAccess ? file.exists() && file.canRead() && file.canWrite() : file.exists() && file.canRead());
     }
 
-    public void encryptBufferedFile(byte[] pw, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-
-        final File encSrcFile = FileIO.FILE_CACHE.get(Constants.E_SRC_FILE);
-
+    public void encryptBufferedFile(byte[] pw) throws CryptoException, IOException {
+        byte[] fileBytes = readFileData(Constants.E_SRC_FILE, 0);
         byte[] keyBytes;
-        if (isFileOk(encSrcFile, false)) {
-            keyBytes = crypt.hash(pw);
-            crypt.initIV();
-            try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(encSrcFile))) {
-                crypt.encryptStream(bis, BYTE_BUFFER, keyBytes);
-            }
+        byte[] encryptedBytes;
 
-        } else {
-            w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
-        }
+        keyBytes = crypt.getMd(pw);
+        encryptedBytes = crypt.encrypt(fileBytes, keyBytes);
+        BYTE_BUFFER.write(crypt.getIV());
+        BYTE_BUFFER.write(encryptedBytes);
 
     }
 
-    public void decryptBufferedFile(byte[] pw, Window w) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-
-        final File decSrcFile = FileIO.FILE_CACHE.get(Constants.D_SRC_FILE);
-
-        byte[] keyBytes;
-
-        if (isFileOk(decSrcFile, false)) {
-            keyBytes = crypt.hash(pw);
-            try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(decSrcFile))) {
-                crypt.decryptStream(bis, BYTE_BUFFER, keyBytes);
-            }
-
-        } else {
-            w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
+    public byte[] readFileData(String fileKey, int skip) throws IOException {
+        if (!FILE_CACHE.containsKey(fileKey)) {
+            throw new FileNotFoundException("megadott kulccsal nem letezik fajl a cacheben");
         }
+
+        File file = FILE_CACHE.get(fileKey);
+        byte[] fileBytes = null;
+        int len = 0;
+        if (isFileOk(file, false)) {
+            try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+                bis.skip(skip);
+                len = bis.available();
+                fileBytes = new byte[len];
+                bis.read(fileBytes);
+            }
+        } else {
+            throw new FileNotFoundException();
+        }
+
+        return fileBytes;
+    }
+
+    public void decryptBufferedFile(byte[] pw) throws CryptoException, IOException {
+        byte[] bytesIV = readFirstNBytes(Constants.D_SRC_FILE, 16);
+        byte[] fileBytes = readFileData(Constants.D_SRC_FILE, 16);
+        byte[] keyBytes;
+        byte[] decryptedBytes;
+
+        keyBytes = crypt.getMd(pw);
+        decryptedBytes = crypt.decrypt(fileBytes, keyBytes, bytesIV);
+        BYTE_BUFFER.write(decryptedBytes);
 
     }
 
-    public void encDoFinal(Window w) throws IOException {
+    public void encDoFinal() throws IOException {
 
         final File encSrcFile = FileIO.FILE_CACHE.get(Constants.E_SRC_FILE);
         final File encSaveDir = FileIO.FILE_CACHE.get(Constants.E_DIR);
 
         if (!isFileOk(encSaveDir, true)) {
-            w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
-            return;
+            throw new FileNotFoundException(encSaveDir.getName() + " nem olvasható");
         }
 
         Files.write(Paths.get(encSaveDir.toPath().toString(), encSrcFile.getName()), BYTE_BUFFER.toByteArray());
         clearCaches();
     }
 
-    public void decDoFinal(Window w) throws IOException {
+    public void decDoFinal() throws IOException {
 
         final File decSrcFile = FileIO.FILE_CACHE.get(Constants.D_SRC_FILE);
         final File decSaveDir = FileIO.FILE_CACHE.get(Constants.D_DIR);
 
         if (!isFileOk(decSaveDir, true)) {
-            w.message(null, Constants.UI_MSG_DIR_NOT_AVAIL, JOptionPane.WARNING_MESSAGE);
-            return;
+            throw new FileNotFoundException(decSaveDir.getName() + " nem olvasható");
         }
 
         Files.write(Paths.get(decSaveDir.toPath().toString(), decSrcFile.getName()), BYTE_BUFFER.toByteArray());
@@ -106,6 +109,21 @@ public class FileIO {
 
     public boolean willOveride(File file1, File file2) {
         return file1.toPath().equals(file2.getParentFile().toPath());
+    }
+
+    public byte[] readFirstNBytes(String fileKey, int blockSize) throws IOException {
+        if (!FILE_CACHE.containsKey(fileKey)) {
+            throw new FileNotFoundException("megadott kulccsal nem letezik fajl a cacheben");
+        }
+        File file = FILE_CACHE.get(fileKey);
+        byte[] bytes = new byte[blockSize];
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+            bis.read(bytes);
+        } catch (Exception e) {
+            throw new FileNotFoundException("olvasas kozbeni hiba");
+        }
+
+        return bytes;
     }
 
     private void clearCaches() {

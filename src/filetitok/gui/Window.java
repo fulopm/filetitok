@@ -4,6 +4,7 @@
 package filetitok.gui;
 
 import filetitok.Constants;
+import filetitok.crypto.CryptoException;
 import filetitok.io.FileIO;
 import filetitok.misc.Util;
 import java.util.List;
@@ -12,15 +13,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -224,14 +218,14 @@ public class Window implements ActionListener {
 
             }
 
-            io.encryptBufferedFile(Util.convertCharsToBytes(key), this);
-            io.encDoFinal(this);
+            io.encryptBufferedFile(Util.convertCharsToBytes(key));
+            io.encDoFinal();
             message(null,
                     Constants.UI_MSG_E_SUCCESS + encSaveDir.toPath()
                     + System.getProperty("file.separator")
                     + encSrcFile.getName(),
                     JOptionPane.INFORMATION_MESSAGE);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | IOException | InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
+        } catch (CryptoException | IOException e) {
             message(e, "Hiba:" + Constants.BREAK, ERROR);
         } finally {
             reset();
@@ -255,17 +249,21 @@ public class Window implements ActionListener {
             final File decSrcFile = FileIO.FILE_CACHE.get(Constants.D_SRC_FILE);
             final File decSaveDir = FileIO.FILE_CACHE.get(Constants.D_DIR);
             FileIO io = new FileIO();
-            io.decryptBufferedFile(Util.convertCharsToBytes(key), this);
-            io.decDoFinal(this);
+            io.decryptBufferedFile(Util.convertCharsToBytes(key));
+            io.decDoFinal();
             message(null,
                     Constants.UI_MSG_D_SUCCESS + decSaveDir.toPath()
                     + System.getProperty("file.separator")
                     + decSrcFile.getName(),
                     JOptionPane.INFORMATION_MESSAGE);
 
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | IOException | InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
-            message(null, Constants.UI_MSG_BAD_PW + (3 - tries), ERROR);
-            tries++;
+        } catch (CryptoException | IOException e) {
+            if (e.getCause() instanceof BadPaddingException) {
+                message(null, Constants.UI_MSG_BAD_PW + (3 - tries), ERROR);
+                tries++;
+            } else {
+                message(e, "Hiba:" + Constants.BREAK, ERROR);
+            }
         } finally {
             reset();
         }

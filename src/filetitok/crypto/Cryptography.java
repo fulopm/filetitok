@@ -26,49 +26,101 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public class Cryptography {
 
-    private final Cipher c;
-    private final MessageDigest md5;
-    private final String AES_CBC_PKCS5 = "AES/CBC/PKCS5Padding";
-    private final String MD5 = "MD5";
+    private Cipher c = null;
+    private MessageDigest md5 = null;
+    private SecureRandom rnd = null;
+    private final String CRYPTO_ALGO = "AES";
+    private final String CRYPTO_PARAM = "AES/CBC/PKCS5Padding";
+    private final String MD_ALGORITHM = "MD5";
     private final int BLOCK_SIZE = 16;
-    private final byte[] bytesIV = new byte[BLOCK_SIZE];
+    private byte[] bytesIV = new byte[BLOCK_SIZE];
+    private boolean isIVUsed = false;
 
-    public Cryptography() throws NoSuchAlgorithmException, NoSuchPaddingException {
-        c = Cipher.getInstance(AES_CBC_PKCS5);
-        md5 = MessageDigest.getInstance(MD5);
+    public Cryptography() throws CryptoException {
+        try {
+            c = Cipher.getInstance(CRYPTO_PARAM);
+            md5 = MessageDigest.getInstance(MD_ALGORITHM);
+            rnd = new SecureRandom();
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            throw new CryptoException(e.getMessage(), e);
+        }
     }
 
     public void initIV() {
-        new SecureRandom().nextBytes(bytesIV);
+        rnd.nextBytes(bytesIV);
+        isIVUsed = false;
     }
 
-    public void encryptStream(InputStream in, OutputStream out, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException {
-        out.write(bytesIV);
-        out.flush();
-        c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(bytesIV));
-        out = new CipherOutputStream(out, c);
-        byte[] buf = new byte[1024];
-        int numRead = 0;
-        while ((numRead = in.read(buf)) >= 0) {
-            out.write(buf, 0, numRead);
+    /**
+     * @deprecated
+     */
+    public void encryptAndWrite(InputStream in, OutputStream out, byte[] key) throws CryptoException {
+        try {
+            out.write(bytesIV);
+            out.flush();
+            c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, CRYPTO_ALGO), new IvParameterSpec(bytesIV));
+            out = new CipherOutputStream(out, c);
+            byte[] buf = new byte[1024];
+            int numRead = 0;
+            while ((numRead = in.read(buf)) != -1) {
+                System.out.println("alma");
+                out.write(buf, 0, numRead);
+            }
+
+        } catch (IOException | InvalidKeyException | InvalidAlgorithmParameterException e) {
+            throw new CryptoException(e.getMessage(), e);
+        } finally {
+            try {
+                in.close();
+                out.close();
+            } catch (IOException e) {
+            }
         }
-        out.close();
     }
 
-    public void decryptStream(InputStream in, OutputStream out, byte[] key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException {
-        in.read(bytesIV);
-        c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(bytesIV));
-        in = new CipherInputStream(in, c);
-        byte[] buf = new byte[1024];
-        int numRead = 0;
-        while ((numRead = in.read(buf)) >= 0) {
-            out.write(buf, 0, numRead);
+    public byte[] encrypt(byte[] data, byte[] key) throws CryptoException {
+        initIV();
+        try {
+            c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, CRYPTO_ALGO), new IvParameterSpec(bytesIV));
+            isIVUsed = true;
+            return c.doFinal(data);
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException ex) {
+            throw new CryptoException(ex.getMessage(), ex);
         }
-        out.close();
-
     }
 
-    public byte[] hash(byte[] key) {
+    public byte[] decrypt(byte[] data, byte[] key, byte[] bytesIV) throws CryptoException {
+        setIV(bytesIV);
+        try {
+            c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, CRYPTO_ALGO), new IvParameterSpec(bytesIV));
+            return c.doFinal(data);
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException ex) {
+            throw new CryptoException(ex.getMessage(), ex);
+        }
+    }
+
+    public void decryptAndWrite(InputStream in, OutputStream out, byte[] key) throws CryptoException {
+        try {
+            in.read(bytesIV);
+            c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, CRYPTO_ALGO), new IvParameterSpec(bytesIV));
+            in = new CipherInputStream(in, c);
+            byte[] buf = new byte[1024];
+            int numRead = 0;
+            while ((numRead = in.read(buf)) != -1) {
+                out.write(buf, 0, numRead);
+            }
+        } catch (IOException | InvalidKeyException | InvalidAlgorithmParameterException e) {
+            throw new CryptoException(e.getMessage(), e);
+        } finally {
+            try {
+                in.close();
+                out.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    public byte[] getMd(byte[] key) {
         return md5.digest(key);
     }
 
@@ -76,5 +128,12 @@ public class Cryptography {
         byte[] temp = new byte[BLOCK_SIZE];
         System.arraycopy(bytesIV, 0, temp, 0, BLOCK_SIZE);
         return temp;
+    }
+
+    public void setIV(byte[] bytesIV) throws CryptoException {
+        if (bytesIV.length != this.BLOCK_SIZE) {
+            throw new CryptoException("IV hossza nem " + this.BLOCK_SIZE, null);
+        }
+        this.bytesIV = bytesIV;
     }
 }
