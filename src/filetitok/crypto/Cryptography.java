@@ -32,7 +32,7 @@ public class Cryptography {
     private final String CRYPTO_ALGO = "AES";
     private final String CRYPTO_PARAM = "AES/CBC/PKCS5Padding";
     private final String MD_ALGORITHM = "MD5";
-    private final int BLOCK_SIZE = 16;
+    private final int BLOCK_SIZE = 0x10;
     private byte[] bytesIV = new byte[BLOCK_SIZE];
     private boolean isIVUsed = false;
 
@@ -49,33 +49,6 @@ public class Cryptography {
     public void initIV() {
         rnd.nextBytes(bytesIV);
         isIVUsed = false;
-    }
-
-    /**
-     * @deprecated
-     */
-    public void encryptAndWrite(InputStream in, OutputStream out, byte[] key) throws CryptoException {
-        try {
-            out.write(bytesIV);
-            out.flush();
-            c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, CRYPTO_ALGO), new IvParameterSpec(bytesIV));
-            out = new CipherOutputStream(out, c);
-            byte[] buf = new byte[1024];
-            int numRead = 0;
-            while ((numRead = in.read(buf)) != -1) {
-                System.out.println("alma");
-                out.write(buf, 0, numRead);
-            }
-
-        } catch (IOException | InvalidKeyException | InvalidAlgorithmParameterException e) {
-            throw new CryptoException(e.getMessage(), e);
-        } finally {
-            try {
-                in.close();
-                out.close();
-            } catch (IOException e) {
-            }
-        }
     }
 
     public byte[] encrypt(byte[] data, byte[] key) throws CryptoException {
@@ -99,27 +72,6 @@ public class Cryptography {
         }
     }
 
-    public void decryptAndWrite(InputStream in, OutputStream out, byte[] key) throws CryptoException {
-        try {
-            in.read(bytesIV);
-            c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, CRYPTO_ALGO), new IvParameterSpec(bytesIV));
-            in = new CipherInputStream(in, c);
-            byte[] buf = new byte[1024];
-            int numRead = 0;
-            while ((numRead = in.read(buf)) != -1) {
-                out.write(buf, 0, numRead);
-            }
-        } catch (IOException | InvalidKeyException | InvalidAlgorithmParameterException e) {
-            throw new CryptoException(e.getMessage(), e);
-        } finally {
-            try {
-                in.close();
-                out.close();
-            } catch (IOException e) {
-            }
-        }
-    }
-
     public byte[] getMd(byte[] key) {
         return md5.digest(key);
     }
@@ -135,5 +87,9 @@ public class Cryptography {
             throw new CryptoException("IV hossza nem " + this.BLOCK_SIZE, null);
         }
         this.bytesIV = bytesIV;
+    }
+
+    public int getBlockSize() {
+        return BLOCK_SIZE;
     }
 }

@@ -18,6 +18,7 @@ import javax.crypto.BadPaddingException;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import static filetitok.io.FileIO.FILE_CACHE;
 
 public class Window implements ActionListener {
 
@@ -196,8 +197,8 @@ public class Window implements ActionListener {
 
     public void actionEncrypt(char[] key) {
 
-        if (!FileIO.FILE_CACHE.containsKey(Constants.E_SRC_FILE)
-                || !FileIO.FILE_CACHE.containsKey(Constants.E_DIR)) {
+        if (!FILE_CACHE.containsKey(Constants.E_SRC_FILE)
+                || !FILE_CACHE.containsKey(Constants.E_DIR)) {
             message(null, Constants.UI_MSG_GENERAL_PARAMETER_ERROR, ERROR);
             return;
         }
@@ -208,8 +209,8 @@ public class Window implements ActionListener {
 
         try {
 
-            final File encSrcFile = FileIO.FILE_CACHE.get(Constants.E_SRC_FILE);
-            final File encSaveDir = FileIO.FILE_CACHE.get(Constants.E_DIR);
+            final File encSrcFile = FILE_CACHE.get(Constants.E_SRC_FILE);
+            final File encSaveDir = FILE_CACHE.get(Constants.E_DIR);
             FileIO io = new FileIO();
 
             if (io.willOveride(encSaveDir, encSrcFile) && confirm(Constants.UI_MSG_OVERIDE, Constants.UI_MSG_WARNING) == JOptionPane.NO_OPTION) {
@@ -239,15 +240,15 @@ public class Window implements ActionListener {
             this.frame.dispose();
         }
 
-        if (!FileIO.FILE_CACHE.containsKey(Constants.D_SRC_FILE)
-                || !FileIO.FILE_CACHE.containsKey(Constants.D_DIR)) {
+        if (!FILE_CACHE.containsKey(Constants.D_SRC_FILE)
+                || !FILE_CACHE.containsKey(Constants.D_DIR)) {
             message(null, Constants.UI_MSG_GENERAL_PARAMETER_ERROR, ERROR);
             return;
         }
 
         try {
-            final File decSrcFile = FileIO.FILE_CACHE.get(Constants.D_SRC_FILE);
-            final File decSaveDir = FileIO.FILE_CACHE.get(Constants.D_DIR);
+            final File decSrcFile = FILE_CACHE.get(Constants.D_SRC_FILE);
+            final File decSaveDir = FILE_CACHE.get(Constants.D_DIR);
             FileIO io = new FileIO();
             io.decryptBufferedFile(Util.convertCharsToBytes(key));
             io.decDoFinal();
@@ -286,7 +287,7 @@ public class Window implements ActionListener {
 
         if (chooser.showOpenDialog(this.frame) == JFileChooser.APPROVE_OPTION) {
             File selected = chooser.getSelectedFile();
-            FileIO.FILE_CACHE.put(keyToRegister, selected);
+            FILE_CACHE.put(keyToRegister, selected);
             return Util.trim(selected.getName());
         } else {
             reset();
