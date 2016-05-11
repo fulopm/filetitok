@@ -7,17 +7,9 @@ package filetitok.io;
 import filetitok.crypto.Cryptography;
 import filetitok.Constants;
 import filetitok.crypto.CryptoException;
-import filetitok.gui.Window;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
 
 public class FileIO {
 
@@ -45,7 +37,7 @@ public class FileIO {
 
         keyBytes = crypt.getMd(pw);
         encryptedBytes = crypt.encrypt(fileBytes, keyBytes);
-        BYTE_BUFFER.write(crypt.getIV());
+        BYTE_BUFFER.write(crypt.getBytesIV());
         BYTE_BUFFER.write(encryptedBytes);
 
     }
@@ -73,7 +65,7 @@ public class FileIO {
     }
 
     public void decryptBufferedFile(byte[] pw) throws CryptoException, IOException {
-        byte[] bytesIV = readFirstNBytes(Constants.D_SRC_FILE, CRYPTO_BLOCK_SIZE);
+        byte[] bytesIV = readBlock(Constants.D_SRC_FILE, CRYPTO_BLOCK_SIZE);
         byte[] fileBytes = readFileData(Constants.D_SRC_FILE, CRYPTO_BLOCK_SIZE);
         byte[] keyBytes;
         byte[] decryptedBytes;
@@ -114,7 +106,7 @@ public class FileIO {
         return file1.toPath().equals(file2.getParentFile().toPath());
     }
 
-    public byte[] readFirstNBytes(String fileKey, int blockSize) throws IOException {
+    public byte[] readBlock(String fileKey, int blockSize) throws IOException {
         if (!FILE_CACHE.containsKey(fileKey)) {
             throw new FileNotFoundException("megadott kulccsal nem letezik fajl a cacheben");
         }
