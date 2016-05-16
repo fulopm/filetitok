@@ -13,6 +13,7 @@ public class FileTitok {
     public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
         Security.addProvider(new BouncyCastleProvider());
         SwingUtilities.invokeLater(new Window()::createAndShowGUI);
+
     }
 
 }

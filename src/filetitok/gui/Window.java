@@ -65,7 +65,7 @@ public class Window implements ActionListener {
         contentPane = new JPanel();
         contentPane.setOpaque(true);
 
-        contentPane.setLayout(new GridBagLayout());
+        contentPane.setLayout(new FlowLayout(FlowLayout.LEADING));
 
         contentPane.setBorder(BorderFactory.createTitledBorder(new TitledBorder(""), Constants.AUTHOR, TitledBorder.TRAILING, TitledBorder.BOTTOM, footerFont, Color.black));
 
@@ -103,7 +103,6 @@ public class Window implements ActionListener {
         encryptionPanel.add(ePassInp);
         encryptionPanel.add(placeholder2);
         encryptionPanel.add(eOkBtn);
-
         contentPane.add(encryptionPanel);
 
         dSrcFileLbl = new JLabel(Constants.UI_TO_DEC);
@@ -142,7 +141,6 @@ public class Window implements ActionListener {
         decryptionPanel.add(dOkBtn);
 
         contentPane.add(decryptionPanel);
-
         frame = new JFrame();
         frame.setAutoRequestFocus(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -196,7 +194,7 @@ public class Window implements ActionListener {
     }
 
     public void actionEncrypt(char[] key) {
-
+        boolean deleteOriginal = false;
         if (!FILE_CACHE.containsKey(Constants.E_SRC_FILE)
                 || !FILE_CACHE.containsKey(Constants.E_DIR)) {
             message(null, Constants.UI_MSG_GENERAL_PARAMETER_ERROR, ERROR);
@@ -205,22 +203,14 @@ public class Window implements ActionListener {
         if (key.length < 8 && confirm(Constants.UI_MSG_PW_LENGTH, Constants.UI_MSG_WARNING) == JOptionPane.NO_OPTION) {
             return;
         }
-        message(null, Constants.UI_MSG_PW, JOptionPane.WARNING_MESSAGE);
-
+        deleteOriginal = (confirm(Constants.UI_MSG_DELETE, Constants.UI_MSG_WARNING) == JOptionPane.YES_OPTION);
         try {
-
             final File encSrcFile = FILE_CACHE.get(Constants.E_SRC_FILE);
             final File encSaveDir = FILE_CACHE.get(Constants.E_DIR);
             FileIO io = new FileIO();
-
-            if (io.willOveride(encSaveDir, encSrcFile) && confirm(Constants.UI_MSG_OVERIDE, Constants.UI_MSG_WARNING) == JOptionPane.NO_OPTION) {
-
-                return;
-
-            }
-
             io.encryptBufferedFile(Util.convertCharsToBytes(key));
-            io.encDoFinal();
+            io.encDoFinal(deleteOriginal);
+            // TODO üzenet rossz fájlnevet ír ki
             message(null,
                     Constants.UI_MSG_E_SUCCESS + encSaveDir.toPath()
                     + System.getProperty("file.separator")
@@ -231,6 +221,7 @@ public class Window implements ActionListener {
         } finally {
             reset();
         }
+
     }
 
     public void actionDecrypt(char[] key) {

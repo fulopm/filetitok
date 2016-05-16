@@ -5,8 +5,9 @@
         <group>
             <file>file:/home/fulopm/filetitok/src/filetitok/gui/Window.java</file>
             <file>file:/home/fulopm/filetitok/src/filetitok/io/FileIO.java</file>
-            <file>file:/home/fulopm/filetitok/src/filetitok/crypto/Cryptography.java</file>
+            <file>file:/home/fulopm/filetitok/src/filetitok/Constants.java</file>
             <file>file:/home/fulopm/filetitok/src/filetitok/FileTitok.java</file>
+            <file>file:/home/fulopm/filetitok/src/filetitok/misc/Util.java</file>
         </group>
     </open-files>
 </project-private>

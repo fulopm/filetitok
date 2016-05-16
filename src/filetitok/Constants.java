@@ -34,7 +34,7 @@ public class Constants {
     public static final String UI_MSG_GENERAL_PARAMETER_ERROR = "Nincs megadva a titkosítandó/visszafejtendő fájl, a kulcs, vagy a mentés helye.";
     public static final String UI_MSG_BAD_PW = "Rossz jelszót adott meg! Maradék próbálkozások száma: ";
     public static final String UI_MSG_PW_LENGTH = "A jelszó túl gyenge. Ajánlott minimum 8 karakteres jelszót megadni." + BREAK + "Folytatja?";
-    public static final String UI_MSG_PW = "Nagyon fontos, hogy a megadott jelszó hiányában" + BREAK + "a későbbiekben a titkosított fájl nem lesz visszafejthető." + BREAK + "A titkosító kulcsot jól jegyezze meg!";
-    public static final String UI_MSG_OVERIDE = "Felülírni készül az eredeti fájlt, mert a mentés" + BREAK + "helye és a forrásfájl helye megegyezik. Folytatja?";
+    //public static final String UI_MSG_PW = "Nagyon fontos, hogy a megadott jelszó hiányában" + BREAK + "a későbbiekben a titkosított fájl nem lesz visszafejthető." + BREAK + "A titkosító kulcsot jól jegyezze meg!";
+    public static final String UI_MSG_DELETE = "Töröljem az eredeti fájlt a titkosítás végeztével?";
 
 }

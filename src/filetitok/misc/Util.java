@@ -5,15 +5,9 @@ package filetitok.misc;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- *
- * @author fulopm
- */
 public class Util {
 
-    private Util() {
-
-    }
+    private Util() {}
 
     public static final byte[] convertCharsToBytes(char[] c) {
 
@@ -25,6 +19,8 @@ public class Util {
         return (s.length() > 7 ? s.substring(0, 7) + "..." : s);
     }
 
-   
+    public static String makeFilename(String name) {
+        return (name.indexOf(".crypt") == -1) ? name.concat(".crypt") : name.replace(".crypt", "");
+    }
 
 }
