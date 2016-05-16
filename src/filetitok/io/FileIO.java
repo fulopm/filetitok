@@ -19,11 +19,16 @@ public class FileIO {
 
     public static Map<String, File> FILE_CACHE = new HashMap<>();
 
+    
+    private final int FILE_HEADER_SIZE;
     private final int CRYPTO_BLOCK_SIZE;
+    private final int CRYPTO_SALT_SIZE;
 
     public FileIO() throws CryptoException {
         crypt = new Cryptography();
         CRYPTO_BLOCK_SIZE = crypt.getBlockSize();
+        CRYPTO_SALT_SIZE = crypt.getSaltSize();
+        FILE_HEADER_SIZE=CRYPTO_BLOCK_SIZE+CRYPTO_SALT_SIZE;
     }
 
     public boolean isFileOk(File file, boolean writeAccess) {
@@ -35,10 +40,12 @@ public class FileIO {
         byte[] keyBytes;
         byte[] encryptedBytes;
 
-        keyBytes = crypt.getMd(pw);
+        keyBytes = crypt.deriveKey(pw, null);
         encryptedBytes = crypt.encrypt(fileBytes, keyBytes);
+        BYTE_BUFFER.write(crypt.getSalt());
         BYTE_BUFFER.write(crypt.getBytesIV());
         BYTE_BUFFER.write(encryptedBytes);
+        crypt.clear();
 
     }
 
@@ -65,14 +72,19 @@ public class FileIO {
     }
 
     public void decryptBufferedFile(byte[] pw) throws CryptoException, IOException {
-        byte[] bytesIV = readBlock(Constants.D_SRC_FILE, CRYPTO_BLOCK_SIZE);
-        byte[] fileBytes = readFileData(Constants.D_SRC_FILE, CRYPTO_BLOCK_SIZE);
+        byte[] headerBytes = readFileHeader(Constants.D_SRC_FILE);
+
+        byte[] saltBytes = Arrays.copyOfRange(headerBytes, 0, CRYPTO_SALT_SIZE);
+        byte[] IVBytes = Arrays.copyOfRange(headerBytes, CRYPTO_SALT_SIZE, headerBytes.length);
+
+        byte[] fileBytes = readFileData(Constants.D_SRC_FILE, CRYPTO_BLOCK_SIZE + CRYPTO_SALT_SIZE);
         byte[] keyBytes;
         byte[] decryptedBytes;
 
-        keyBytes = crypt.getMd(pw);
-        decryptedBytes = crypt.decrypt(fileBytes, keyBytes, bytesIV);
+        keyBytes = crypt.deriveKey(pw, saltBytes);
+        decryptedBytes = crypt.decrypt(fileBytes, keyBytes, IVBytes);
         BYTE_BUFFER.write(decryptedBytes);
+        crypt.clear();
 
     }
 
@@ -106,12 +118,12 @@ public class FileIO {
         return file1.toPath().equals(file2.getParentFile().toPath());
     }
 
-    public byte[] readBlock(String fileKey, int blockSize) throws IOException {
+    public byte[] readFileHeader(String fileKey) throws IOException {
         if (!FILE_CACHE.containsKey(fileKey)) {
             throw new FileNotFoundException("megadott kulccsal nem letezik fajl a cacheben");
         }
         File file = FILE_CACHE.get(fileKey);
-        byte[] bytes = new byte[blockSize];
+        byte[] bytes = new byte[FILE_HEADER_SIZE];
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
             bis.read(bytes);
         } catch (Exception e) {

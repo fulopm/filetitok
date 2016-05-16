@@ -262,6 +262,7 @@ public class Window implements ActionListener {
             if (e.getCause() instanceof BadPaddingException) {
                 message(null, Constants.UI_MSG_BAD_PW + (3 - tries), ERROR);
                 tries++;
+                e.printStackTrace();
             } else {
                 message(e, "Hiba:" + Constants.BREAK, ERROR);
             }
