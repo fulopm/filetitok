@@ -1,4 +1,5 @@
 /*
+ Gyakran hasznalt string konstansok gyujtemenye
  Készítette: Fülöp Márk <fulop.mark@outlook.com>
  */
 package filetitok;

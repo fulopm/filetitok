@@ -1,4 +1,5 @@
 /*
+ Kriptografia osztaly
  Készítette: Fülöp Márk <fulop.mark@outlook.com>
  */
 package filetitok.crypto;
@@ -10,10 +11,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.crypto.generators.BCrypt;
 
-/**
- *
- * @author fulopm
- */
 public class Cryptography {
 
     static final String PROVIDER = "BC";
@@ -52,6 +49,9 @@ public class Cryptography {
         rnd.nextBytes(bytesIV);
     }
 
+    /*
+        uj iv generalasa, es bajtok titkositasa
+     */
     public byte[] encrypt(byte[] data, byte[] key) throws CryptoException {
         initIV();
         try {
@@ -59,9 +59,15 @@ public class Cryptography {
             return c.doFinal(data);
         } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException ex) {
             throw new CryptoException(ex.getMessage(), ex);
+        } finally {
+            Arrays.fill(data, (byte) 0);
+            Arrays.fill(key, (byte) 0);
         }
     }
 
+    /*
+    iv beallitasa es bajtok visszafejtese
+     */
     public byte[] decrypt(byte[] data, byte[] key, byte[] bytesIV) throws CryptoException {
         setIV(bytesIV);
         try {
@@ -72,6 +78,9 @@ public class Cryptography {
         }
     }
 
+    /*
+     HASH_ALGO tipusu hash generalasa a megadott byte tombbol
+     */
     public byte[] getMd(byte[] key) {
         return md.digest(key);
     }
@@ -103,7 +112,11 @@ public class Cryptography {
         return random;
     }
 
+    /*
+        kulcs eloallitasa a jelszobol
+     */
     public byte[] deriveKey(byte[] passphrase, byte[] inputsalt) throws CryptoException {
+        md.reset();
         if (inputsalt == null) {
             byte[] hash = getMd(randomBytes(BCRYPT_SALT_SIZE));
             System.arraycopy(hash, 0, salt, 0, BCRYPT_SALT_SIZE);
@@ -112,9 +125,15 @@ public class Cryptography {
             } catch (Exception ex) {
                 throw new CryptoException("bcrypt argument is invalid", ex);
 
+            } finally {
+                Arrays.fill(passphrase, (byte) 0);
             }
         } else {
-            return BCrypt.generate(passphrase, inputsalt, BCRYPT_COST);
+            try {
+                return BCrypt.generate(passphrase, inputsalt, BCRYPT_COST);
+            } finally {
+                Arrays.fill(passphrase, (byte) 0);
+            }
         }
     }
 
@@ -128,10 +147,4 @@ public class Cryptography {
         return BCRYPT_SALT_SIZE;
     }
 
-    public void clear() {
-        Arrays.fill(bytesIV, (byte) 0x00);
-        Arrays.fill(salt, (byte) 0x00);
-        md.reset();
-
-    }
 }
