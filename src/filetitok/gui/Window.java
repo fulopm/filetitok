@@ -1,4 +1,5 @@
 /*
+ Grafikus feluletet kezelo osztaly
  Készítette: Fülöp Márk <fulop.mark@outlook.com>
  */
 package filetitok.gui;
