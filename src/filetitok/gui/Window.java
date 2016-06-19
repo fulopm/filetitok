@@ -312,7 +312,7 @@ public class Window implements ActionListener {
                 message(null, Constants.UI_MSG_BAD_PW + (3 - tries), ERROR_MESSAGE);
                 tries++;
             } else {
-                message(e, "Hiba:" + Constants.BREAK, ERROR_MESSAGE);
+                message(e, "Hiba:" + e.getMessage() + Constants.BREAK, ERROR_MESSAGE);
             }
         } finally {
             reset();

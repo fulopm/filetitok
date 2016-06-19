@@ -9,7 +9,12 @@ import java.util.Arrays;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.BCrypt;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 public class Cryptography {
 
@@ -34,12 +39,18 @@ public class Cryptography {
     MessageDigest md = null;
 
     SecureRandom rnd = null;
+    
+    HMac hmac;
+    
+    Digest macdigest;
 
     public Cryptography() throws CryptoException {
         try {
             c = Cipher.getInstance(CRYPTO_PARAM, PROVIDER);
             md = MessageDigest.getInstance(HASH_ALGO, PROVIDER);
+            macdigest = new SHA256Digest();
             rnd = new SecureRandom();
+            hmac = new HMac(macdigest);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | NoSuchProviderException e) {
             throw new CryptoException(e.getMessage(), e);
         }
@@ -81,9 +92,18 @@ public class Cryptography {
     /*
      HASH_ALGO tipusu hash generalasa a megadott byte tombbol
      */
-    public byte[] getMd(byte[] key) {
-        return md.digest(key);
+       public byte[] getMd(byte[] data) {
+        return md.digest(data);
     }
+       
+       
+    public byte[] generateHmac(byte[] key, byte[] data) {
+           hmac.init(new KeyParameter(key));
+           hmac.update(data,0,data.length);
+           byte[] buf = new byte[macdigest.getDigestSize()];
+           hmac.doFinal(buf, 0);
+           return buf;
+       }
 
     public byte[] getBytesIV() {
         byte[] temp = new byte[CRYPTO_BLOCK_SIZE];
@@ -116,6 +136,7 @@ public class Cryptography {
         kulcs eloallitasa a jelszobol
      */
     public byte[] deriveKey(byte[] passphrase, byte[] inputsalt) throws CryptoException {
+        
         md.reset();
         if (inputsalt == null) {
             byte[] hash = getMd(randomBytes(BCRYPT_SALT_SIZE));
@@ -136,6 +157,7 @@ public class Cryptography {
             }
         }
     }
+    
 
     public byte[] getSalt() {
         byte[] temp = new byte[BCRYPT_SALT_SIZE];

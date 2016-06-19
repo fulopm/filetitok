@@ -7,6 +7,7 @@ package filetitok.misc;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import org.bouncycastle.util.Arrays;
 
 public class Util {
@@ -14,7 +15,6 @@ public class Util {
     
     // titkositott fajlok kiterjesztese
     static final String ENCRYPTED_EXTENSION = ".crypt";
-    
     
     /*
         meggatoljuk a peldanyositast
@@ -55,5 +55,8 @@ public class Util {
                 ? name.concat(ENCRYPTED_EXTENSION)
                 : name.replace(ENCRYPTED_EXTENSION, "");
     }
+    
+    
+     
 
 }
