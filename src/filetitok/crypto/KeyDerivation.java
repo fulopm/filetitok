@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,45 +18,57 @@ public class KeyDerivation {
 
     private static byte[] salt;
 
-    private static int kdfCost;
-    private static int kdfSaltSize;
+    private static int KDF_COST;
+    private static int KDF_SALT_SIZE;
 
     private static final Logger LOG = Logger.getLogger(KeyDerivation.class.getName());
 
-    public static int getKdfSaltSize() {
-        return kdfSaltSize;
-    }
-
     static {
         loadProperties();
-        salt = new byte[kdfSaltSize];
+        salt = new byte[KDF_SALT_SIZE];
     }
 
-    public static byte[] deriveKey(byte[] passphrase, byte[] inputsalt) throws CryptoException {
-        if (inputsalt == null) {
-            byte[] hash = Digest.getHash(randomBytes(kdfSaltSize));
-            System.arraycopy(hash, 0, salt, 0, kdfSaltSize);
-            try {
-                return BCrypt.generate(passphrase, salt, kdfCost);
-            } catch (Exception ex) {
-                LOG.log(Level.SEVERE, "error while the key derivation process - CryptoException thrown", ex);
-                throw new CryptoException("bcrypt argument is invalid", ex);
+    public static byte[] createKey(byte[] passphrase, byte[] inputsalt) throws CryptoException {
 
-            }
-        } else {
-            try {
-                return BCrypt.generate(passphrase, inputsalt, kdfCost);
-            } catch (Exception ex) {
-                LOG.log(Level.SEVERE, "error while the key derivation process - CryptoException thrown", ex);
-                throw new CryptoException("bcrypt argument is invalid", ex);
-            }
+        return inputsalt == null
+                ? deriveKey(passphrase)
+                : createKey(passphrase, inputsalt);
+    }
+
+    private static byte[] deriveKey(byte[] passphrase) throws CryptoException {
+        newSalt();
+        try {
+            return BCrypt.generate(passphrase, salt, KDF_COST);
+        } catch (Exception ex) {
+            LOG.log(Level.SEVERE, "error while the key derivation process - CryptoException thrown", ex);
+            throw new CryptoException("bcrypt argument is invalid", ex);
+
         }
     }
 
+    private static byte[] deriveKey(byte[] passphrase, byte[] existingSalt) throws CryptoException {
+        salt = existingSalt;
+        try {
+            return BCrypt.generate(passphrase, salt, KDF_COST);
+        } catch (Exception ex) {
+            LOG.log(Level.SEVERE, "error while the key derivation process - CryptoException thrown", ex);
+            throw new CryptoException("bcrypt argument is invalid", ex);
+        }
+    }
+
+    public static int getKdfSaltSize() {
+        return KDF_SALT_SIZE;
+    }
+
     public static byte[] getSalt() {
-        byte[] temp = new byte[kdfSaltSize];
-        System.arraycopy(salt, 0, temp, 0, kdfSaltSize);
+        byte[] temp = new byte[KDF_SALT_SIZE];
+        System.arraycopy(salt, 0, temp, 0, KDF_SALT_SIZE);
         return temp;
+    }
+
+    private static void newSalt() {
+
+        salt = Digest.getHash(randomBytes(KDF_SALT_SIZE));
     }
 
     private static void loadProperties() {
@@ -70,8 +81,8 @@ public class KeyDerivation {
             LOG.log(Level.SEVERE, "cannot read properties", ex);
         }
 
-        kdfCost = Integer.parseInt(props.getProperty("keyderiv-cost"));
-        kdfSaltSize = Integer.parseInt(props.getProperty("keyderiv-salt")) / 8;
+        KDF_COST = Integer.parseInt(props.getProperty("keyderiv-cost"));
+        KDF_SALT_SIZE = Integer.parseInt(props.getProperty("keyderiv-salt")) / 8;
         props.clear();
     }
 }

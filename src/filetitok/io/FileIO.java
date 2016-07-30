@@ -74,25 +74,36 @@ public class FileIO {
                 mac,
                 macKeySalt,
                 iv;
+        // Reading the full file content
         fileBytes = readFileData(Constants.E_SRC_FILE, 0);
 
-        keyBytes = KeyDerivation.deriveKey(pw, null);
+        /* Key Derivation */
+        keyBytes = KeyDerivation.createKey(pw, null);
         keySalt = KeyDerivation.getSalt();
+        /* End of key derivation */
 
+ /* Encryption */
         encryptedBytes = Cryptography.encrypt(fileBytes, keyBytes);
         iv = Cryptography.getIV();
+        /* End of encryption*/
 
-        byte[] macKey = KeyDerivation.deriveKey(pw, null);
-        mac = MessageAuthentication.calcMac(encryptedBytes, macKey);
+ /* Message Authentication (MAC) */
+        mac = MessageAuthentication.calcMac(encryptedBytes, KeyDerivation.createKey(pw, null));
         macKeySalt = KeyDerivation.getSalt();
+        /* End of MAC */
+
+ /* Cleaning */
         Arrays.fill(pw, (byte) 0);
         Arrays.fill(fileBytes, (byte) 0);
+        /* End of cleaning */
+
+ /* Append to the buffer */
         BYTE_BUFFER.write(keySalt);
         BYTE_BUFFER.write(iv);
         BYTE_BUFFER.write(macKeySalt);
         BYTE_BUFFER.write(mac);
         BYTE_BUFFER.write(encryptedBytes);
-
+        /* End of appending */
     }
 
     /*
@@ -100,33 +111,38 @@ public class FileIO {
         bufferbe irjuk
      */
     public void readAndDecryptCached(byte[] pw) throws CryptoException, IOException {
-        // file elso n bajtjanak beolvasasa (jelen esetben 32 - salt + iv)
-        byte[] headerBytes = readFileHeader(Constants.D_SRC_FILE);
-        // az elobbi header byte tomb elso 16 bajtjat kiemeljuk a salt tombbe
-        byte[] keySalt = Arrays.copyOfRange(headerBytes, 0, 16);
-        byte[] iv = Arrays.copyOfRange(headerBytes, 16, 32);
-        byte[] macKeySalt = Arrays.copyOfRange(headerBytes, 32, 48);
-        byte[] mac = Arrays.copyOfRange(headerBytes, 48, 80);
+
+        /* Reading and parsing of the file header */
+        byte[] headerBytes = readFileHeader(Constants.D_SRC_FILE); // full header
+        byte[] keySalt = Arrays.copyOfRange(headerBytes, 0, 16); // Cipher KEY SALT
+        byte[] iv = Arrays.copyOfRange(headerBytes, 16, 32); // IV
+        byte[] macKeySalt = Arrays.copyOfRange(headerBytes, 32, 48); // MAC KEY SALT
+        byte[] mac = Arrays.copyOfRange(headerBytes, 48, 80); // MAC
+        /* End of parsing */
+
         byte[] fileBytes, keyBytes, decryptedBytes;
 
-        // beolvassuk a fajl tobbi reszet, az elso n bajt atugrasaval (most 32), mivel ezeket mar felhasznaltuk
+        // Reading the ciphertext from the file
         fileBytes = readFileData(Constants.D_SRC_FILE, FILE_HEADER_SIZE);
-        byte[] macKey = KeyDerivation.deriveKey(pw, macKeySalt);
-        if (!MessageAuthentication.calcAndValidateMac(
+
+/* Message Authentication (MAC) */
+        if (MessageAuthentication.calcAndValidateMac(
                 mac,
                 fileBytes,
-                macKey)) {
-            // TODO log
+                KeyDerivation.createKey(pw, macKeySalt))) {
+            /* MAC is valid */
+/* Key Derivation */
+            keyBytes = KeyDerivation.createKey(pw, keySalt);
             Arrays.fill(pw, (byte) 0);
-
-            throw new CryptoException("message authentication failed", null);
-
-        } else {
-            // kulcs eloallitasa a megadott jelszobol, es a beolvasott saltbol
-            keyBytes = KeyDerivation.deriveKey(pw, keySalt);
-            Arrays.fill(pw, (byte) 0);
+/* Decryption */
             decryptedBytes = Cryptography.decrypt(fileBytes, keyBytes, iv);
             BYTE_BUFFER.write(decryptedBytes);
+
+        } else {
+            /* MAC is not valid */
+            Arrays.fill(pw, (byte) 0);
+            throw new CryptoException("message authentication failed", null);
+
         }
     }
 

@@ -77,7 +77,7 @@ public class Cryptography {
     public static final byte[] decrypt(byte[] data, byte[] key, byte[] bytesIV) throws CryptoException {
         setIV(bytesIV);
         try {
-            c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, cipherAlgo), new IvParameterSpec(bytesIV));
+            c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, cipherAlgo), new IvParameterSpec(iv));
             return c.doFinal(data);
         } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException ex) {
             LOG.log(Level.WARNING, "error during the decryption process - CryptoException thrown", ex);
