@@ -4,71 +4,66 @@
  */
 package filetitok.crypto;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.*;
 import java.util.Arrays;
+import java.util.Properties;
+import static filetitok.crypto.CryptoUtils.randomBytes;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.generators.BCrypt;
-import org.bouncycastle.crypto.macs.HMac;
-import org.bouncycastle.crypto.params.KeyParameter;
 
 public class Cryptography {
 
-    static final String PROVIDER = "BC";
+    private static byte[] iv;
 
-    static final String CRYPTO_ALGO = "AES";
+    private static Cipher c;
 
-    static final String CRYPTO_PARAM = "AES/CBC/PKCS5Padding";
+    private static String cipherAlgo;
+    private static String cipherMode;
+    private static String cipherPadding;
 
-    static final String HASH_ALGO = "SHA-256";
+    private static final Logger LOG = Logger.getLogger(Cryptography.class.getName());
 
-    static final int CRYPTO_BLOCK_SIZE = 0x10;
-    static final int BCRYPT_COST = 0x10;
-    static final int BCRYPT_SALT_SIZE = 0x10;
+    private static int cipherBlockSize;
+    private static int cipherIVSize;
+    private static int cipherKeyLength;
 
-    private byte[] salt = new byte[BCRYPT_SALT_SIZE];
-
-    private byte[] bytesIV = new byte[CRYPTO_BLOCK_SIZE];
-
-    Cipher c = null;
-
-    MessageDigest md = null;
-
-    SecureRandom rnd = null;
-    
-    HMac hmac;
-    
-    Digest macdigest;
-
-    public Cryptography() throws CryptoException {
+    static {
+        loadProperties();
         try {
-            c = Cipher.getInstance(CRYPTO_PARAM, PROVIDER);
-            md = MessageDigest.getInstance(HASH_ALGO, PROVIDER);
-            macdigest = new SHA256Digest();
-            rnd = new SecureRandom();
-            hmac = new HMac(macdigest);
+
+            c = Cipher.getInstance(
+                    cipherAlgo + '/'
+                    + cipherMode + '/'
+                    + cipherPadding,
+                    "BC");
+
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | NoSuchProviderException e) {
-            throw new CryptoException(e.getMessage(), e);
+            LOG.log(Level.SEVERE, "error initializing class - ExceptionInInitializerError thrown", e);
+            throw new ExceptionInInitializerError(e.getMessage());
         }
     }
 
-    public void initIV() {
-        rnd.nextBytes(bytesIV);
+    public static void genIV() throws CryptoException {
+        setIV(randomBytes(cipherIVSize));
     }
 
     /*
         uj iv generalasa, es bajtok titkositasa
      */
-    public byte[] encrypt(byte[] data, byte[] key) throws CryptoException {
-        initIV();
+    public static final byte[] encrypt(byte[] data, byte[] key) throws CryptoException {
+        genIV();
         try {
-            c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, CRYPTO_ALGO), new IvParameterSpec(bytesIV));
+            c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, cipherAlgo), new IvParameterSpec(iv));
             return c.doFinal(data);
         } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException ex) {
+            LOG.log(Level.WARNING, "error during the encryption process - CryptoException thrown", ex);
             throw new CryptoException(ex.getMessage(), ex);
         } finally {
             Arrays.fill(data, (byte) 0);
@@ -79,94 +74,61 @@ public class Cryptography {
     /*
     iv beallitasa es bajtok visszafejtese
      */
-    public byte[] decrypt(byte[] data, byte[] key, byte[] bytesIV) throws CryptoException {
+    public static final byte[] decrypt(byte[] data, byte[] key, byte[] bytesIV) throws CryptoException {
         setIV(bytesIV);
         try {
-            c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, CRYPTO_ALGO), new IvParameterSpec(bytesIV));
+            c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, cipherAlgo), new IvParameterSpec(bytesIV));
             return c.doFinal(data);
         } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException ex) {
+            LOG.log(Level.WARNING, "error during the decryption process - CryptoException thrown", ex);
             throw new CryptoException(ex.getMessage(), ex);
+        } finally {
+            Arrays.fill(key, (byte) 0);
         }
     }
 
-    /*
-     HASH_ALGO tipusu hash generalasa a megadott byte tombbol
-     */
-       public byte[] getMd(byte[] data) {
-        return md.digest(data);
-    }
-       
-       
-    public byte[] generateHmac(byte[] key, byte[] data) {
-           hmac.init(new KeyParameter(key));
-           hmac.update(data,0,data.length);
-           byte[] buf = new byte[macdigest.getDigestSize()];
-           hmac.doFinal(buf, 0);
-           return buf;
-       }
-
-    public byte[] getBytesIV() {
-        byte[] temp = new byte[CRYPTO_BLOCK_SIZE];
-        System.arraycopy(bytesIV, 0, temp, 0, CRYPTO_BLOCK_SIZE);
+    public static byte[] getIV() {
+        byte[] temp = new byte[cipherIVSize];
+        System.arraycopy(iv, 0, temp, 0, cipherIVSize);
         return temp;
     }
 
-    public void setIV(byte[] bytesIV) throws CryptoException {
-        if (bytesIV.length != CRYPTO_BLOCK_SIZE) {
-            throw new CryptoException("IV hossza nem " + CRYPTO_BLOCK_SIZE, null);
+    public static void setIV(byte[] bytesIV) throws CryptoException {
+        if (bytesIV.length != cipherBlockSize) {
+            throw new CryptoException("IV hossza nem " + cipherBlockSize, null);
         }
-        this.bytesIV = bytesIV;
+        iv = bytesIV;
     }
 
-    public int getBlockSize() {
-        return CRYPTO_BLOCK_SIZE;
+    public static int getCipherBlockSize() {
+        return cipherBlockSize;
     }
 
-    public byte[] randomBytes(int size) {
-        if (size <= 0) {
-            throw new IllegalArgumentException("randomBytes size<=0");
+    public static int getCipherIVSize() {
+        return cipherIVSize;
+    }
+
+    public static int getCipherKeyLength() {
+        return cipherKeyLength;
+    }
+
+    private static void loadProperties() {
+        Properties props = new Properties();
+
+        try (InputStream is = new FileInputStream(new File("res/crypto.properties"))) {
+            props.load(is);
+
+        } catch (IOException ex) {
+            LOG.log(Level.SEVERE, "cannot read properties", ex);
         }
 
-        byte[] random = new byte[size];
-        rnd.nextBytes(random);
-        return random;
-    }
-
-    /*
-        kulcs eloallitasa a jelszobol
-     */
-    public byte[] deriveKey(byte[] passphrase, byte[] inputsalt) throws CryptoException {
-        
-        md.reset();
-        if (inputsalt == null) {
-            byte[] hash = getMd(randomBytes(BCRYPT_SALT_SIZE));
-            System.arraycopy(hash, 0, salt, 0, BCRYPT_SALT_SIZE);
-            try {
-                return BCrypt.generate(passphrase, salt, BCRYPT_COST);
-            } catch (Exception ex) {
-                throw new CryptoException("bcrypt argument is invalid", ex);
-
-            } finally {
-                Arrays.fill(passphrase, (byte) 0);
-            }
-        } else {
-            try {
-                return BCrypt.generate(passphrase, inputsalt, BCRYPT_COST);
-            } finally {
-                Arrays.fill(passphrase, (byte) 0);
-            }
-        }
-    }
-    
-
-    public byte[] getSalt() {
-        byte[] temp = new byte[BCRYPT_SALT_SIZE];
-        System.arraycopy(salt, 0, temp, 0, BCRYPT_SALT_SIZE);
-        return temp;
-    }
-
-    public int getSaltSize() {
-        return BCRYPT_SALT_SIZE;
+        cipherAlgo = props.getProperty("cipher-algo");
+        cipherMode = props.getProperty("cipher-mode");
+        cipherPadding = props.getProperty("cipher-padding");
+        cipherBlockSize = Integer.parseInt(props.getProperty("cipher-blocksize")) / 8;
+        cipherIVSize = Integer.parseInt(props.getProperty("cipher-ivsize")) / 8;
+        cipherKeyLength = Integer.parseInt(props.getProperty("cipher-keysize")) / 8;
+        props.clear();
     }
 
 }

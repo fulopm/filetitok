@@ -7,6 +7,8 @@ package filetitok.io;
 import filetitok.crypto.Cryptography;
 import filetitok.Constants;
 import filetitok.crypto.CryptoException;
+import filetitok.crypto.KeyDerivation;
+import filetitok.crypto.MessageAuthentication;
 import filetitok.misc.Util;
 import java.io.*;
 import java.nio.file.*;
@@ -14,14 +16,12 @@ import java.util.*;
 
 public class FileIO {
 
-    final Cryptography crypt;
-
-    /*
-    ez egy olyan, dinamikusan novekvo, valtoztathato tarolo, amelyben a titkosito
-    vagy eppen visszafejto metodusok a kesz bajtokat irjak, majd a finalizalo metodusok
-    innen irjak ki a fajlba az elkeszult adatsort
-    
-    egyebkent akar arraylist is lehetne
+    /**
+     * ez egy olyan, dinamikusan novekvo, valtoztathato tarolo, amelyben a
+     * titkosito vagy eppen visszafejto metodusok a kesz bajtokat irjak, majd a
+     * finalizalo metodusok innen irjak ki a fajlba az elkeszult adatsort
+     *
+     * egyebkent akar arraylist is lehetne
      */
     private static ByteArrayOutputStream BYTE_BUFFER = new ByteArrayOutputStream();
 
@@ -36,15 +36,22 @@ public class FileIO {
     // crypto osztalytol kapott adatok, amelyek a kulonbozo tombok es bufferek allokalasahoz szuksegesek
     // lasd reszletesen a Cryptography osztalyt
     private final int FILE_HEADER_SIZE;
-    private final int CRYPTO_BLOCK_SIZE;
-    private final int CRYPTO_SALT_SIZE;
+    private int CRYPTO_BLOCK_SIZE;
+    private int KDF_SALT_SIZE;
+    private int MAC_SIZE;
 
     public FileIO() throws CryptoException {
-        crypt = new Cryptography();
-        CRYPTO_BLOCK_SIZE = crypt.getBlockSize();
-        CRYPTO_SALT_SIZE = crypt.getSaltSize();
-        // salt, mac salt, iv, mac
-        FILE_HEADER_SIZE = CRYPTO_BLOCK_SIZE + CRYPTO_SALT_SIZE + CRYPTO_SALT_SIZE + CRYPTO_SALT_SIZE*2;
+        CRYPTO_BLOCK_SIZE = 0;
+        KDF_SALT_SIZE = 0;
+        try {
+            CRYPTO_BLOCK_SIZE = Cryptography.getCipherBlockSize();
+            KDF_SALT_SIZE = KeyDerivation.getKdfSaltSize();
+            MAC_SIZE = MessageAuthentication.getMacSize();
+
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+        FILE_HEADER_SIZE = CRYPTO_BLOCK_SIZE + KDF_SALT_SIZE * 2 + MAC_SIZE;
     }
 
     /*
@@ -60,26 +67,31 @@ public class FileIO {
         bufferbe irjuk a salttal, IV-vel egyutt
      */
     public void readAndEncryptCached(byte[] pw) throws CryptoException, IOException {
-        byte[] fileBytes;
-        byte[] keyBytes;
-        byte[] encryptedBytes;
-        byte[] mac;
-
-        // beolvassuk az egesz fajlt
+        byte[] fileBytes,
+                keyBytes,
+                keySalt,
+                encryptedBytes,
+                mac,
+                macKeySalt,
+                iv;
         fileBytes = readFileData(Constants.E_SRC_FILE, 0);
-        // elkeszitjuk a kulcsot a jelszobol (JELSZO !!= KULCS)
-        keyBytes = crypt.deriveKey(pw, null);
-        // titkositjuk a fajl bajtjait
-        encryptedBytes = crypt.encrypt(fileBytes, keyBytes);
-        // takaritas
+
+        keyBytes = KeyDerivation.deriveKey(pw, null);
+        keySalt = KeyDerivation.getSalt();
+
+        encryptedBytes = Cryptography.encrypt(fileBytes, keyBytes);
+        iv = Cryptography.getIV();
+
+        byte[] macKey = KeyDerivation.deriveKey(pw, null);
+        mac = MessageAuthentication.calcMac(encryptedBytes, macKey);
+        macKeySalt = KeyDerivation.getSalt();
         Arrays.fill(pw, (byte) 0);
         Arrays.fill(fileBytes, (byte) 0);
-        BYTE_BUFFER.write(crypt.getSalt()); // TITKOSITAS SALT (16)
-        mac = crypt.generateHmac(crypt.deriveKey(pw, null), encryptedBytes);
-        BYTE_BUFFER.write(crypt.getSalt()); // MAC SALT (16)
-        BYTE_BUFFER.write(crypt.getBytesIV()); // IV (16)
-        BYTE_BUFFER.write(mac); // MAC (32)
-        BYTE_BUFFER.write(encryptedBytes); // data (n)
+        BYTE_BUFFER.write(keySalt);
+        BYTE_BUFFER.write(iv);
+        BYTE_BUFFER.write(macKeySalt);
+        BYTE_BUFFER.write(mac);
+        BYTE_BUFFER.write(encryptedBytes);
 
     }
 
@@ -91,30 +103,31 @@ public class FileIO {
         // file elso n bajtjanak beolvasasa (jelen esetben 32 - salt + iv)
         byte[] headerBytes = readFileHeader(Constants.D_SRC_FILE);
         // az elobbi header byte tomb elso 16 bajtjat kiemeljuk a salt tombbe
-        byte[] cipherSaltBytes = Arrays.copyOfRange(headerBytes, 0, CRYPTO_SALT_SIZE);
-        byte[] macSaltBytes = Arrays.copyOfRange(headerBytes, CRYPTO_SALT_SIZE, CRYPTO_SALT_SIZE*2);
-        byte[] IVBytes = Arrays.copyOfRange(headerBytes, CRYPTO_SALT_SIZE*2, CRYPTO_SALT_SIZE*3);
-        byte[] macBytes = Arrays.copyOfRange(headerBytes, CRYPTO_SALT_SIZE*3, CRYPTO_SALT_SIZE*5);
-
-        byte[] fileBytes;
-        byte[] keyBytes;
-        byte[] macKeyBytes;
-        byte[] decryptedBytes;
-        byte[] calculatedMac;
+        byte[] keySalt = Arrays.copyOfRange(headerBytes, 0, 16);
+        byte[] iv = Arrays.copyOfRange(headerBytes, 16, 32);
+        byte[] macKeySalt = Arrays.copyOfRange(headerBytes, 32, 48);
+        byte[] mac = Arrays.copyOfRange(headerBytes, 48, 80);
+        byte[] fileBytes, keyBytes, decryptedBytes;
 
         // beolvassuk a fajl tobbi reszet, az elso n bajt atugrasaval (most 32), mivel ezeket mar felhasznaltuk
         fileBytes = readFileData(Constants.D_SRC_FILE, FILE_HEADER_SIZE);
-        // kulcs eloallitasa a megadott jelszobol, es a beolvasott saltbol
-        keyBytes = crypt.deriveKey(pw, cipherSaltBytes);
-        macKeyBytes = crypt.deriveKey(pw, macSaltBytes);
-        calculatedMac = crypt.generateHmac(macKeyBytes, fileBytes);
-        if (!Arrays.equals(macBytes, calculatedMac)) {
-            throw new CryptoException("authentication failed", null);
-        }
-        // visszafejtes es bufferbe iras
-        decryptedBytes = crypt.decrypt(fileBytes, keyBytes, IVBytes);
-        BYTE_BUFFER.write(decryptedBytes);
+        byte[] macKey = KeyDerivation.deriveKey(pw, macKeySalt);
+        if (!MessageAuthentication.calcAndValidateMac(
+                mac,
+                fileBytes,
+                macKey)) {
+            // TODO log
+            Arrays.fill(pw, (byte) 0);
 
+            throw new CryptoException("message authentication failed", null);
+
+        } else {
+            // kulcs eloallitasa a megadott jelszobol, es a beolvasott saltbol
+            keyBytes = KeyDerivation.deriveKey(pw, keySalt);
+            Arrays.fill(pw, (byte) 0);
+            decryptedBytes = Cryptography.decrypt(fileBytes, keyBytes, iv);
+            BYTE_BUFFER.write(decryptedBytes);
+        }
     }
 
     /*
@@ -130,12 +143,10 @@ public class FileIO {
 
         File file = FILE_CACHE.get(fileKey);
         byte[] fileBytes = null;
-        int len = 0;
         if (isFileOk(file, false)) {
             try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
                 bis.skip(skip);
-                len = bis.available();
-                fileBytes = new byte[len];
+                fileBytes = new byte[bis.available()];
                 bis.read(fileBytes);
             }
         } else {
@@ -182,7 +193,8 @@ public class FileIO {
             throw new FileNotFoundException(decSaveDir.getName() + " nem olvasható");
         }
         Files.write(
-                Paths.get(decSaveDir.toPath().toString(), Util.makeFilename(decSrcFile.getName())),
+                Paths.get(decSaveDir.toPath().toString(),
+                        Util.makeFilename(decSrcFile.getName())),
                 BYTE_BUFFER.toByteArray());
         clearCaches();
     }

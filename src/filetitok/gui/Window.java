@@ -242,10 +242,7 @@ public class Window implements ActionListener {
             // fajl beolvasas, titkositas, bufferbe iras
             io.readAndEncryptCached(passBytes);
             // biztonsagi takaritas
-            Arrays.fill(pass, '\u0000');
-            Arrays.fill(ePassInp.getPassword(), '\u0000');
-            Arrays.fill(passBytes, (byte) 0);
-
+            ePassInp.setText("");
             // zaro muveletek elvegzese, ha a parameter true, torli az eredeti fajlt
             io.encDoFinal(deleteOriginal);
 
@@ -255,6 +252,10 @@ public class Window implements ActionListener {
                     + System.getProperty("file.separator")
                     + encSrcFile.getName(),
                     JOptionPane.INFORMATION_MESSAGE);
+            Arrays.fill(pass, '\u0000');
+            Arrays.fill(ePassInp.getPassword(), '\u0000');
+            Arrays.fill(passBytes, (byte) 0);
+
         } catch (CryptoException | IOException e) {
             message(e, "Hiba:" + Constants.BREAK, ERROR_MESSAGE);
         } finally {
@@ -294,9 +295,7 @@ public class Window implements ActionListener {
             // fajl beolvasas, visszafejtes, bufferbe iras
             io.readAndDecryptCached(passBytes);
             // takaritas
-            Arrays.fill(pass, '\u0000');
-            Arrays.fill(dPassInp.getPassword(), '\u0000');
-            Arrays.fill(passBytes, (byte) 0);
+            dPassInp.setText("");
             //zaro muveletek
             io.decDoFinal();
             //tajekoztatas hogy a muvelet sikeres volt
@@ -305,7 +304,10 @@ public class Window implements ActionListener {
                     + System.getProperty("file.separator")
                     + decSrcFile.getName(),
                     JOptionPane.INFORMATION_MESSAGE);
-
+            
+            Arrays.fill(pass, '\u0000');
+            Arrays.fill(dPassInp.getPassword(), '\u0000');
+            Arrays.fill(passBytes, (byte) 0);
         } catch (CryptoException | IOException e) {
             // BadPaddingException dobodik, ha a megadott kulcs nem jo, ekkor megnoveljuk a probalkozasok szamat
             if (e.getCause() instanceof BadPaddingException) {
@@ -319,10 +321,9 @@ public class Window implements ActionListener {
         }
     }
 
-    
     /*
         GUI elemek szovegenek eredeti allapotba visszaallitasat vegzo metodus
-    */
+     */
     public void reset() {
         eSrcFileBtn.setText(Constants.UI_SELECT);
         eDestDirBtn.setText(Constants.UI_SELECT);
@@ -334,7 +335,7 @@ public class Window implements ActionListener {
         FILE_CACHE-ben regisztralunk egy felhasznalotol bekert fajlt, a String
         parameterkent kapott kulcson
         ha a masodik parameter true, csak konyvtarakat fogad el a program
-    */
+     */
     public String registerFile(String keyToRegister, boolean onlyDir) {
         final JFileChooser chooser = new JFileChooser();
         if (onlyDir) {
@@ -345,7 +346,7 @@ public class Window implements ActionListener {
         if (chooser.showOpenDialog(this.frame) == JFileChooser.APPROVE_OPTION) {
             // kiemeljuk, regisztraljuk a FILE_CACHE-ben
             File selected = chooser.getSelectedFile();
-            FILE_CACHE.put(/*KULCS - STRING*/keyToRegister, /*ERTEK - FILE*/selected);
+            FILE_CACHE.put(/*KULCS - STRING*/keyToRegister, /*ERTEK - FILE*/ selected);
             // visszaadjuk a megjelenitesre alkalmas nevet
             return Util.trim(selected.getName());
         } else {
@@ -356,7 +357,6 @@ public class Window implements ActionListener {
 
     }
 
-    
     /*
         betoltjuk a res konyvtarban levo osszes fajlt egy listaba, es visszaadjuk.
         azert szukseges, mert minden OS-en masmilyen meretu logo kell, es hagyni
@@ -364,7 +364,7 @@ public class Window implements ActionListener {
         vagy megnyujtott stb...
     
         csak esztetikai okok
-    */
+     */
     public List<Image> loadIcons() {
         List<Image> temp = new ArrayList<>();
         try {
