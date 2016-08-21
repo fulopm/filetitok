@@ -5,7 +5,7 @@ FileTitok
 **HU:** Ez egy iskolai projektmunkaként készített egyszerű fájl titkosító program, amely Javaban készült. A program biztonságosságáért semmilyen felelősséget nem vállalok, illetve nem tanácsolom az éles helyzetekben történő használatát. Ha valamilyen problémát találsz, kérlek jelezd.
 
 ---------
-**EN:** It is a simple file encryption utility application, written in Java for learning purposes. Since it is a school project, and I'm not a cryptographer, please do not ever use this software in production. I am not responsible for any problem on this tool. (But if you found one, please report it to me.)
+**EN:** It is a simple file encryption utility application, written in Java for learning purposes. Since it is a school project, and I'm not a cryptographer, please do not ever use this software in production. I am not responsible for any problem caused by this tool. (But if you found one, please report it to me.)
 
 ----------
 *Copyright 2016 Márk Fülöp*
