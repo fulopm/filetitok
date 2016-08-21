@@ -50,13 +50,13 @@ public class MessageAuthentication {
             LOG.log(Level.INFO, "given MAC's aren't equal");
             return false;
         }
-
+        boolean isValid = true;
         for (int i = 0; i < mac1.length; i++) {
             if (mac1[i] != mac2[i]) {
-                return false;
+                isValid = false;
             }
         }
-        return true;
+        return isValid;
     }
 
     public static boolean calcAndValidateMac(byte[] mac, byte[] data, byte[] key) {

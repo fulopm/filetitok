@@ -40,8 +40,8 @@ public class Util {
         majd hozzailleszt harom pontot, kulonben visszaadja az eredeti stringet
      */
     public static String trim(String s) {
-        return (s.length() > 7)
-                ? s.substring(0, 7) + "..."
+        return (s.length() > 5)
+                ? s.substring(0, 5) + "..."
                 : s;
     }
 

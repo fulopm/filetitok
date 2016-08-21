@@ -32,7 +32,7 @@ public class KeyDerivation {
 
         return inputsalt == null
                 ? deriveKey(passphrase)
-                : createKey(passphrase, inputsalt);
+                : deriveKey(passphrase, inputsalt);
     }
 
     private static byte[] deriveKey(byte[] passphrase) throws CryptoException {

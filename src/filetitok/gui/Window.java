@@ -67,7 +67,7 @@ public class Window implements ActionListener {
 
         // main contentpanel inicializalsa
         contentPane = new JPanel();
-        contentPane.setOpaque(true);
+        contentPane.setOpaque(!true);
 
         contentPane.setLayout(new FlowLayout(FlowLayout.LEADING));
 
@@ -243,6 +243,9 @@ public class Window implements ActionListener {
             io.readAndEncryptCached(passBytes);
             // biztonsagi takaritas
             ePassInp.setText("");
+            Arrays.fill(pass, '\u0000');
+            Arrays.fill(ePassInp.getPassword(), '\u0000');
+
             // zaro muveletek elvegzese, ha a parameter true, torli az eredeti fajlt
             io.encDoFinal(deleteOriginal);
 
@@ -252,10 +255,8 @@ public class Window implements ActionListener {
                     + System.getProperty("file.separator")
                     + encSrcFile.getName(),
                     JOptionPane.INFORMATION_MESSAGE);
-            Arrays.fill(pass, '\u0000');
-            Arrays.fill(ePassInp.getPassword(), '\u0000');
-            Arrays.fill(passBytes, (byte) 0);
 
+            Arrays.fill(passBytes, (byte) 0);
         } catch (CryptoException | IOException e) {
             message(e, "Hiba:" + Constants.BREAK, ERROR_MESSAGE);
         } finally {
@@ -296,17 +297,16 @@ public class Window implements ActionListener {
             io.readAndDecryptCached(passBytes);
             // takaritas
             dPassInp.setText("");
-            //zaro muveletek
+            Arrays.fill(pass, '\u0000');
+            Arrays.fill(dPassInp.getPassword(), '\u0000');
             io.decDoFinal();
+
             //tajekoztatas hogy a muvelet sikeres volt
             message(null,
                     Constants.UI_MSG_D_SUCCESS + decSaveDir.toPath()
                     + System.getProperty("file.separator")
                     + decSrcFile.getName(),
                     JOptionPane.INFORMATION_MESSAGE);
-            
-            Arrays.fill(pass, '\u0000');
-            Arrays.fill(dPassInp.getPassword(), '\u0000');
             Arrays.fill(passBytes, (byte) 0);
         } catch (CryptoException | IOException e) {
             // BadPaddingException dobodik, ha a megadott kulcs nem jo, ekkor megnoveljuk a probalkozasok szamat

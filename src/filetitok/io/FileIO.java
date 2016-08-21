@@ -77,7 +77,7 @@ public class FileIO {
         // Reading the full file content
         fileBytes = readFileData(Constants.E_SRC_FILE, 0);
 
-        /* Key Derivation */
+/* Key Derivation */
         keyBytes = KeyDerivation.createKey(pw, null);
         keySalt = KeyDerivation.getSalt();
         /* End of key derivation */
@@ -136,6 +136,7 @@ public class FileIO {
             Arrays.fill(pw, (byte) 0);
 /* Decryption */
             decryptedBytes = Cryptography.decrypt(fileBytes, keyBytes, iv);
+            
             BYTE_BUFFER.write(decryptedBytes);
 
         } else {
